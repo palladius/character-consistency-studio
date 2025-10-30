@@ -1,6 +1,6 @@
 {
   "name": "Character Consistency Studio",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "An application to generate consistent characters using reference images and text prompts. Upload images of a person, then generate new images of them in different styles and scenarios. Also features image editing and standard image generation capabilities.",
   "requestFramePermissions": []
 }

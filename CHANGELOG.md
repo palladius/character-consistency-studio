@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.5] - 2024-07-31
+
+### Added
+- Created a `docs/USER_MANUAL.md` to help users understand the application's features, including a detailed explanation of the "Enhance Quality" button.
+
+### Fixed
+- Stabilized the width of the left sidebar, preventing it from being squeezed into an unusable size on certain screen layouts.
+
 ## [0.0.4] - 2024-07-31
 
 ### Changed
