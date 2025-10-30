@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Character } from '../types';
 import { ICONS } from '../constants';
-import metadata from '../metadata.json';
 
 interface SidebarProps {
   characters: Character[];
@@ -95,10 +94,6 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
           ))}
         </ul>
       </nav>
-
-      <footer className="mt-auto text-center text-xs text-slate-500 pt-4">
-        <p>Version {metadata.version}</p>
-      </footer>
     </aside>
   );
 };

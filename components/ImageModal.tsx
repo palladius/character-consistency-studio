@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GeneratedImage } from '../types';
 import Loader from './Loader';
 import { ICONS } from '../constants';
@@ -16,25 +16,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('Copy');
-  const [dimensions, setDimensions] = useState<{width: number; height: number} | null>(null);
-
-  useEffect(() => {
-    if (image?.dataUrl) {
-      const img = new window.Image();
-      img.onload = () => {
-        setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-      };
-      img.onerror = () => {
-        console.error("Failed to load image to get dimensions.");
-        setDimensions(null);
-      }
-      img.src = image.dataUrl;
-    }
-    // Cleanup function to reset state when component unmounts or image changes
-    return () => {
-        setDimensions(null);
-    }
-  }, [image]);
 
   if (!image) return null;
 
@@ -105,22 +86,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             {/* Metadata section */}
             <div>
                 <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  {characterName && (
-                      <div>
-                          <p className="text-sm text-slate-400 mb-1 font-semibold">Character</p>
-                          <p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p>
-                      </div>
-                  )}
-                  {dimensions && (
-                      <div>
-                          <p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p>
-                          <p className="text-slate-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">
-                              {dimensions.width} &times; {dimensions.height} px
-                          </p>
-                      </div>
-                  )}
-                </div>
+                {characterName && (
+                    <div className="mb-4">
+                        <p className="text-sm text-slate-400 mb-1 font-semibold">Character</p>
+                        <p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p>
+                    </div>
+                )}
                 <div>
                     <p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p>
                     <p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p>
