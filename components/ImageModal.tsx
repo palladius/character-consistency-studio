@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GeneratedImage } from '../types';
 import Loader from './Loader';
 import { ICONS } from '../constants';
@@ -16,6 +16,23 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('Copy');
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    if (image?.dataUrl) {
+      const img = new window.Image();
+      img.onload = () => {
+        setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.onerror = () => {
+        console.error("Failed to load image to get dimensions.");
+        setDimensions(null);
+      };
+      img.src = image.dataUrl;
+    } else {
+        setDimensions(null);
+    }
+  }, [image?.dataUrl]);
 
   if (!image) return null;
 
@@ -63,9 +80,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-slate-800 rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden" onClick={e => e.stopPropagation()}>
-        {/* Image display with "sleek canvas" style */}
+    <div className="fixed inset-0 bg-slate-900 z-50" onClick={onClose}>
+      <div className="bg-slate-800 w-full h-full flex flex-col md:flex-row" onClick={e => e.stopPropagation()}>
+        {/* Image display */}
         <div className="w-full md:w-2/3 p-4 flex items-center justify-center bg-slate-900">
            <div className="bg-white p-2 rounded-sm shadow-lg w-full h-full flex items-center justify-center">
              <img src={image.dataUrl} alt={image.prompt} className="max-w-full max-h-full object-contain rounded-sm" />
@@ -73,7 +90,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
         </div>
 
         {/* Details and Edit panel */}
-        <div className="w-full md:w-1/3 p-6 flex flex-col">
+        <div className="w-full md:w-1/3 p-6 flex flex-col bg-slate-800">
           <div className="flex justify-between items-center mb-4">
               <button onClick={onClose} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors font-semibold">
                 <div className="w-5 h-5">{ICONS.back}</div>
@@ -92,6 +109,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                         <p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p>
                     </div>
                 )}
+                <div className="mb-4">
+                    <p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p>
+                    <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">
+                        {dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}
+                    </p>
+                </div>
                 <div>
                     <p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p>
                     <p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p>
