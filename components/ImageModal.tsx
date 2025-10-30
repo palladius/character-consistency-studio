@@ -1,19 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import { GeneratedImage } from '../types';
 import Loader from './Loader';
 import { ICONS } from '../constants';
-import { editImage } from '../services/geminiService';
+import { editImage, upscaleImage } from '../services/geminiService';
 
 interface ImageModalProps {
   image: GeneratedImage | null;
   characterName?: string;
   onClose: () => void;
-  onImageEdited: (characterId: string, prompt: string, dataUrl: string) => void;
+  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string) => void;
+  allGeneratedImages: GeneratedImage[];
+  onSelectImage: (image: GeneratedImage) => void;
 }
 
-const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, onImageEdited }) => {
+const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, onImageUpdate, allGeneratedImages, onSelectImage }) => {
   const [editPrompt, setEditPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUpscaling, setIsUpscaling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('Copy');
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -38,17 +42,31 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
 
   const handleEdit = async () => {
     if (!editPrompt.trim()) return;
-    setIsLoading(true);
+    setIsEditing(true);
     setError(null);
     try {
       const editedImageUrl = await editImage(editPrompt, image);
-      onImageEdited(image.characterId, `Edit: ${editPrompt} (from original: ${image.prompt})`, editedImageUrl);
+      onImageUpdate(image.characterId, `Edit: ${editPrompt} (from original: ${image.prompt})`, editedImageUrl, image.id);
       setEditPrompt('');
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to edit image');
     } finally {
-      setIsLoading(false);
+      setIsEditing(false);
+    }
+  };
+
+  const handleUpscale = async () => {
+    setIsUpscaling(true);
+    setError(null);
+    try {
+        const upscaledImageUrl = await upscaleImage(image);
+        onImageUpdate(image.characterId, `Upscaled: ${image.prompt}`, upscaledImageUrl, image.id);
+        onClose();
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to upscale image');
+    } finally {
+        setIsUpscaling(false);
     }
   };
 
@@ -78,6 +96,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
       setTimeout(() => setCopyStatus('Copy'), 2000);
     }
   };
+  
+  const parentImage = image.parentId ? allGeneratedImages.find(i => i.id === image.parentId) : null;
+  const childImages = allGeneratedImages.filter(i => i.parentId === image.id);
 
   return (
     <div className="fixed inset-0 bg-slate-900 z-50" onClick={onClose}>
@@ -103,54 +124,44 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             {/* Metadata section */}
             <div>
                 <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
-                {characterName && (
-                    <div className="mb-4">
-                        <p className="text-sm text-slate-400 mb-1 font-semibold">Character</p>
-                        <p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p>
-                    </div>
-                )}
-                <div className="mb-4">
-                    <p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p>
-                    <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">
-                        {dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}
-                    </p>
-                </div>
-                <div>
-                    <p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p>
-                    <p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p>
-                </div>
+                {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
+                <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p><p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p></div>
+                <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
             </div>
 
             {/* Actions Section */}
-            <div className="flex gap-3">
-                <button onClick={handleDownload} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm">
-                    <div className="w-4 h-4">{ICONS.download}</div> Download
-                </button>
-                 <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60">
-                    <div className="w-4 h-4">{ICONS.copy}</div> {copyStatus}
-                </button>
+            <div className="grid grid-cols-3 gap-2">
+                <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"><div className="w-4 h-4">{ICONS.download}</div> Download</button>
+                <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div> {copyStatus}</button>
+                <button onClick={handleUpscale} disabled={isUpscaling} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isUpscaling ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.upscale}</div>} {isUpscaling ? '...' : 'Upscale'}</button>
             </div>
+            
+            {/* Related Images */}
+            {(parentImage || childImages.length > 0) && (
+                <div className="border-t border-slate-700 pt-6">
+                    <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2">{ICONS.history} Image History</h3>
+                    {parentImage && <div className="mb-3">
+                        <p className="text-sm text-slate-400 mb-2 font-semibold">Original Image</p>
+                        <img src={parentImage.dataUrl} onClick={() => onSelectImage(parentImage)} alt="Parent" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-purple-500"/>
+                    </div>}
+                    {childImages.length > 0 && <div>
+                        <p className="text-sm text-slate-400 mb-2 font-semibold">Edits & Upscales ({childImages.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                        {childImages.map(child => <img key={child.id} src={child.dataUrl} onClick={() => onSelectImage(child)} alt="Child" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-purple-500"/>)}
+                        </div>
+                    </div>}
+                </div>
+            )}
 
             {/* Edit section */}
             <div>
               <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2 border-t border-slate-700 pt-6">{ICONS.edit} Edit Image</h3>
               <p className="text-sm text-slate-400 mb-3">Describe the changes you want to make.</p>
               
-              {isLoading ? (
-                <div className="py-8"><Loader text="Applying edits..." /></div>
-              ) : (
+              {isEditing ? ( <div className="py-8"><Loader text="Applying edits..." /></div>) : (
                 <>
-                  <textarea
-                    value={editPrompt}
-                    onChange={(e) => setEditPrompt(e.target.value)}
-                    placeholder="e.g., add a retro filter, make the background a forest..."
-                    className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                  />
-                  <button
-                    onClick={handleEdit}
-                    disabled={isLoading}
-                    className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
-                  >
+                  <textarea value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., add a retro filter, make the background a forest..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"/>
+                  <button onClick={handleEdit} disabled={isEditing || isUpscaling} className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
                     {ICONS.sparkles} Apply Changes
                   </button>
                   {error && <p className="text-red-400 text-sm mt-4">{error}</p>}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Workspace from './components/Workspace';
@@ -78,6 +79,11 @@ function App() {
   const [showStandaloneGenerator, setShowStandaloneGenerator] = useState(false);
   
   const characterForModal = modalImage ? characters.find(c => c.id === modalImage.characterId) : null;
+  const allGeneratedImagesForChar = characterForModal ? characterForModal.generatedImages : [];
+
+  const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string) => {
+    addGeneratedImage(characterId, prompt, dataUrl, parentId);
+  };
 
   return (
     <div className="flex h-screen w-screen font-sans">
@@ -112,7 +118,9 @@ function App() {
           image={modalImage}
           characterName={characterForModal?.name}
           onClose={() => setModalImage(null)}
-          onImageEdited={addGeneratedImage}
+          onImageUpdate={handleImageUpdate}
+          allGeneratedImages={allGeneratedImagesForChar}
+          onSelectImage={setModalImage}
         />
       )}
 

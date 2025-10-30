@@ -52,12 +52,13 @@ export const useCharacterManager = () => {
     ));
   }, []);
 
-  const addGeneratedImage = useCallback((characterId: string, prompt: string, dataUrl: string) => {
+  const addGeneratedImage = useCallback((characterId: string, prompt: string, dataUrl: string, parentId?: string) => {
     const newImage: GeneratedImage = {
       id: `gen_${Date.now()}`,
       dataUrl,
       prompt,
       characterId,
+      parentId,
     };
     setCharacters(prev => prev.map(c => 
       c.id === characterId ? { ...c, generatedImages: [newImage, ...c.generatedImages] } : c

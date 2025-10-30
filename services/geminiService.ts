@@ -2,20 +2,26 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Image } from '../types';
 
-const getApiKey = () => {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-        throw new Error("API_KEY environment variable not set.");
+let ai: GoogleGenAI | null = null;
+
+const getAI = () => {
+    if (!ai) {
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            throw new Error("API_KEY environment variable not set.");
+        }
+        ai = new GoogleGenAI({ apiKey });
     }
-    return apiKey;
+    return ai;
 };
+
 
 const getMimeType = (dataUrl: string): string => {
     return dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
 };
 
 export const generateWithCharacter = async (prompt: string, referenceImages: Image[]): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const gemini = getAI();
     
     const imageParts = referenceImages.map(img => ({
         inlineData: {
@@ -24,7 +30,7 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
         },
     }));
 
-    const response = await ai.models.generateContent({
+    const response = await gemini.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
             parts: [
@@ -52,9 +58,9 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
 };
 
 export const editImage = async (prompt: string, baseImage: Image): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const gemini = getAI();
 
-    const response = await ai.models.generateContent({
+    const response = await gemini.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
             parts: [
@@ -86,10 +92,16 @@ export const editImage = async (prompt: string, baseImage: Image): Promise<strin
     throw new Error("No image edited. The model did not return an image.");
 };
 
+export const upscaleImage = async (baseImage: Image): Promise<string> => {
+    const upscalePrompt = "Upscale this image to a higher resolution. Enhance details, sharpness, and clarity without altering the subject or composition. Generate a photorealistic high-quality version.";
+    return editImage(upscalePrompt, baseImage);
+};
+
+
 export const generateImage = async (prompt: string): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const gemini = getAI();
     
-    const response = await ai.models.generateImages({
+    const response = await gemini.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt: prompt,
         config: {

@@ -7,6 +7,7 @@ export interface Image {
 export interface GeneratedImage extends Image {
   prompt: string;
   characterId: string;
+  parentId?: string;
 }
 
 export interface Character {
