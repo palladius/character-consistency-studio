@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.4] - 2024-07-31
+
+### Changed
+- Replaced the non-functional "Upscale" feature with "Enhance Quality". This new feature focuses on improving image details, sharpness, and lighting at the original resolution, providing a more reliable enhancement.
+
 ## [0.0.3] - 2024-07-31
 
 ### Added

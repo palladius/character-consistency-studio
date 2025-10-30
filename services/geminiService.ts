@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Image } from '../types';
 
@@ -92,9 +91,9 @@ export const editImage = async (prompt: string, baseImage: Image): Promise<strin
     throw new Error("No image edited. The model did not return an image.");
 };
 
-export const upscaleImage = async (baseImage: Image): Promise<string> => {
-    const upscalePrompt = "Upscale this image to a higher resolution. Enhance details, sharpness, and clarity without altering the subject or composition. Generate a photorealistic high-quality version.";
-    return editImage(upscalePrompt, baseImage);
+export const enhanceImage = async (baseImage: Image): Promise<string> => {
+    const enhancePrompt = "Enhance the quality of this image. Increase sharpness, improve lighting, refine details, and add more realism without changing the content or composition. Make it look like a high-resolution photograph.";
+    return editImage(enhancePrompt, baseImage);
 };
 
 
@@ -116,9 +115,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
         return `data:image/png;base64,${base64ImageBytes}`;
     }
 
-    if (response.promptFeedback?.blockReason) {
-        throw new Error(`Image generation blocked: ${response.promptFeedback.blockReason}. ${response.promptFeedback.blockReasonMessage || ''}`);
-    }
-
+    // FIX: The `GenerateImagesResponse` type does not contain `promptFeedback`, so the check for it has been removed.
+    
     throw new Error("No image generated with imagen-4.0");
 };

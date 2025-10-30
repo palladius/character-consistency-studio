@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { GeneratedImage } from '../types';
 import Loader from './Loader';
 import { ICONS } from '../constants';
-import { editImage, upscaleImage } from '../services/geminiService';
+import { editImage, enhanceImage } from '../services/geminiService';
 
 interface ImageModalProps {
   image: GeneratedImage | null;
@@ -17,7 +17,7 @@ interface ImageModalProps {
 const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, onImageUpdate, allGeneratedImages, onSelectImage }) => {
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [isUpscaling, setIsUpscaling] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('Copy');
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -56,17 +56,17 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     }
   };
 
-  const handleUpscale = async () => {
-    setIsUpscaling(true);
+  const handleEnhance = async () => {
+    setIsEnhancing(true);
     setError(null);
     try {
-        const upscaledImageUrl = await upscaleImage(image);
-        onImageUpdate(image.characterId, `Upscaled: ${image.prompt}`, upscaledImageUrl, image.id);
+        const enhancedImageUrl = await enhanceImage(image);
+        onImageUpdate(image.characterId, `Enhanced: ${image.prompt}`, enhancedImageUrl, image.id);
         onClose();
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to upscale image');
+        setError(err instanceof Error ? err.message : 'Failed to enhance image');
     } finally {
-        setIsUpscaling(false);
+        setIsEnhancing(false);
     }
   };
 
@@ -133,7 +133,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             <div className="grid grid-cols-3 gap-2">
                 <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"><div className="w-4 h-4">{ICONS.download}</div> Download</button>
                 <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div> {copyStatus}</button>
-                <button onClick={handleUpscale} disabled={isUpscaling} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isUpscaling ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.upscale}</div>} {isUpscaling ? '...' : 'Upscale'}</button>
+                <button onClick={handleEnhance} disabled={isEnhancing} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isEnhancing ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.sparkles}</div>} {isEnhancing ? '...' : 'Enhance'}</button>
             </div>
             
             {/* Related Images */}
@@ -145,7 +145,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                         <img src={parentImage.dataUrl} onClick={() => onSelectImage(parentImage)} alt="Parent" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-purple-500"/>
                     </div>}
                     {childImages.length > 0 && <div>
-                        <p className="text-sm text-slate-400 mb-2 font-semibold">Edits & Upscales ({childImages.length})</p>
+                        <p className="text-sm text-slate-400 mb-2 font-semibold">Edits & Enhancements ({childImages.length})</p>
                         <div className="flex flex-wrap gap-2">
                         {childImages.map(child => <img key={child.id} src={child.dataUrl} onClick={() => onSelectImage(child)} alt="Child" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-purple-500"/>)}
                         </div>
@@ -161,7 +161,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
               {isEditing ? ( <div className="py-8"><Loader text="Applying edits..." /></div>) : (
                 <>
                   <textarea value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., add a retro filter, make the background a forest..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"/>
-                  <button onClick={handleEdit} disabled={isEditing || isUpscaling} className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
+                  <button onClick={handleEdit} disabled={isEditing || isEnhancing} className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
                     {ICONS.sparkles} Apply Changes
                   </button>
                   {error && <p className="text-red-400 text-sm mt-4">{error}</p>}

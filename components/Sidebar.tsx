@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Character } from '../types';
 import { ICONS } from '../constants';
@@ -40,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
   };
 
   return (
-    <aside className="w-full md:w-80 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4 h-screen overflow-y-auto">
+    <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4 h-screen overflow-y-auto">
       <div className="flex items-center gap-3 mb-6">
         {ICONS.sparkles}
         <h1 className="text-2xl font-bold text-white">Character Studio</h1>
