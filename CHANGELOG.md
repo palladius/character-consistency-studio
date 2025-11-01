@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.16] - 2024-08-01
+
+### Fixed
+- Restored the `metadata.json` file which was corrupted, causing the application version number to disappear from the UI.
+
 ## [0.0.15] - 2024-08-01
 
 ### Added

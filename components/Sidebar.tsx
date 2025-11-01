@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Character } from '../types';
 import { ICONS } from '../constants';
 import { QUICK_GEN_CHARACTER_ID } from '../hooks/useCharacterManager';
@@ -9,11 +9,22 @@ interface SidebarProps {
   onSelectCharacter: (id: string) => void;
   onAddCharacter: (name: string) => void;
   onDeleteCharacter: (id: string) => void;
+  totalImages: number;
+  totalTokens: number;
+  estimatedCost: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSelectCharacter, onAddCharacter, onDeleteCharacter }) => {
+const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSelectCharacter, onAddCharacter, onDeleteCharacter, totalImages, totalTokens, estimatedCost }) => {
   const [newCharName, setNewCharName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
+
+  useEffect(() => {
+    fetch('./metadata.json')
+      .then(response => response.json())
+      .then(data => setAppVersion(data.version))
+      .catch(error => console.error('Error fetching app metadata:', error));
+  }, []);
 
   const handleAddCharacter = () => {
     if (newCharName.trim()) {
@@ -36,13 +47,16 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
   const userCharacters = characters.filter(c => c.id !== QUICK_GEN_CHARACTER_ID);
 
   return (
-    <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4 overflow-y-auto">
-      <div className="flex items-center gap-3 mb-6">
+    <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4">
+      <div className="flex items-center gap-3 mb-6 flex-shrink-0">
         {ICONS.sparkles}
-        <h1 className="text-2xl font-bold text-white">Character Studio</h1>
+        <h1 className="text-2xl font-bold text-white">
+          Character Studio
+          {appVersion && <span className="text-sm font-normal text-slate-400 ml-2">v{appVersion}</span>}
+        </h1>
       </div>
       
-      <nav className="flex-grow">
+      <nav className="flex-grow overflow-y-auto -mr-2 pr-2">
         {quickGenChar && (
             <div className="mb-4">
                 <div
@@ -113,6 +127,23 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
           ))}
         </ul>
       </nav>
+      <div className="flex-shrink-0 pt-4 mt-4 border-t border-slate-800">
+          <h3 className="text-sm font-semibold text-slate-400 mb-2">Session Stats</h3>
+          <div className="text-xs text-slate-400 space-y-1">
+              <div className="flex justify-between">
+                  <span>Images Generated:</span>
+                  <strong className="font-bold text-slate-200">{totalImages}</strong>
+              </div>
+              <div className="flex justify-between">
+                  <span>Tokens Used:</span>
+                  <strong className="font-bold text-slate-200">{totalTokens.toLocaleString()}</strong>
+              </div>
+              <div className="flex justify-between">
+                  <span>Estimated Cost:</span>
+                  <strong className="font-bold text-slate-200">${estimatedCost.toFixed(2)}</strong>
+              </div>
+          </div>
+      </div>
     </aside>
   );
 };

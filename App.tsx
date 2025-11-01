@@ -215,6 +215,9 @@ function App() {
           onSelectCharacter={setSelectedCharacterId}
           onAddCharacter={addCharacter}
           onDeleteCharacter={deleteCharacter}
+          totalImages={usageStats.totalImages}
+          totalTokens={usageStats.totalTokens}
+          estimatedCost={usageStats.estimatedCost}
         />
         <div className="flex flex-col flex-grow relative">
             <div className="absolute bottom-4 right-6 z-20">
@@ -236,11 +239,7 @@ function App() {
         </div>
       </div>
       
-      <Footer 
-        totalImages={usageStats.totalImages}
-        totalTokens={usageStats.totalTokens}
-        estimatedCost={usageStats.estimatedCost}
-      />
+      <Footer />
       
       {modalImage && (
         <ImageModal 
