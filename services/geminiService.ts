@@ -19,7 +19,7 @@ const getMimeType = (dataUrl: string): string => {
     return dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
 };
 
-export const generateWithCharacter = async (prompt: string, referenceImages: Image[], aspectRatio: string): Promise<string> => {
+export const generateWithCharacter = async (prompt: string, referenceImages: Image[], aspectRatio: string): Promise<{ dataUrl: string; usageMetadata?: any }> => {
     const gemini = getAI();
     
     const imageParts = referenceImages.map(img => ({
@@ -50,7 +50,8 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
 
     if (imagePart?.inlineData) {
         const base64ImageBytes: string = imagePart.inlineData.data;
-        return `data:${imagePart.inlineData.mimeType};base64,${base64ImageBytes}`;
+        const dataUrl = `data:${imagePart.inlineData.mimeType};base64,${base64ImageBytes}`;
+        return { dataUrl, usageMetadata: response.usageMetadata };
     }
 
     if (response.promptFeedback?.blockReason) {
@@ -60,7 +61,7 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
     throw new Error("No image generated. The model did not return an image.");
 };
 
-export const editImage = async (prompt: string, baseImage: Image): Promise<string> => {
+export const editImage = async (prompt: string, baseImage: Image): Promise<{ dataUrl: string; usageMetadata?: any }> => {
     const gemini = getAI();
 
     const response = await gemini.models.generateContent({
@@ -85,7 +86,8 @@ export const editImage = async (prompt: string, baseImage: Image): Promise<strin
 
     if (imagePart?.inlineData) {
         const base64ImageBytes: string = imagePart.inlineData.data;
-        return `data:${imagePart.inlineData.mimeType};base64,${base64ImageBytes}`;
+        const dataUrl = `data:${imagePart.inlineData.mimeType};base64,${base64ImageBytes}`;
+        return { dataUrl, usageMetadata: response.usageMetadata };
     }
 
     if (response.promptFeedback?.blockReason) {
@@ -95,13 +97,13 @@ export const editImage = async (prompt: string, baseImage: Image): Promise<strin
     throw new Error("No image edited. The model did not return an image.");
 };
 
-export const enhanceImage = async (baseImage: Image): Promise<string> => {
+export const enhanceImage = async (baseImage: Image): Promise<{ dataUrl: string; usageMetadata?: any }> => {
     const enhancePrompt = "Enhance the quality of this image. Increase sharpness, improve lighting, refine details, and add more realism without changing the content or composition. Make it look like a high-resolution photograph.";
     return editImage(enhancePrompt, baseImage);
 };
 
 
-export const generateImage = async (prompt: string, aspectRatio: string, numberOfImages: number): Promise<string[]> => {
+export const generateImage = async (prompt: string, aspectRatio: string, numberOfImages: number): Promise<{ dataUrl: string; usageMetadata?: any }[]> => {
     const gemini = getAI();
     
     const response = await gemini.models.generateImages({
@@ -115,7 +117,10 @@ export const generateImage = async (prompt: string, aspectRatio: string, numberO
     });
 
     if (response.generatedImages && response.generatedImages.length > 0) {
-        return response.generatedImages.map(img => `data:image/png;base64,${img.image.imageBytes}`);
+        return response.generatedImages.map(img => ({
+             dataUrl: `data:image/png;base64,${img.image.imageBytes}`,
+             usageMetadata: undefined, // Imagen API doesn't provide token usage
+        }));
     }
     
     throw new Error("No image generated with imagen-4.0");

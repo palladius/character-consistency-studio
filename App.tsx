@@ -19,7 +19,7 @@ const generationCounts = [1, 2, 4];
 
 interface StandaloneGeneratorProps {
     onClose: () => void;
-    onImagesGenerated: (prompt: string, dataUrls: string[]) => void;
+    onImagesGenerated: (prompt: string, data: { dataUrl: string; usageMetadata?: any }[]) => void;
 }
 
 const StandaloneGenerator: React.FC<StandaloneGeneratorProps> = ({onClose, onImagesGenerated}) => {
@@ -41,9 +41,9 @@ const StandaloneGenerator: React.FC<StandaloneGeneratorProps> = ({onClose, onIma
         setError(null);
         setGeneratedImages([]);
         try {
-            const imageUrls = await generateImage(prompt, aspectRatio, imageCount);
-            setGeneratedImages(imageUrls);
-            onImagesGenerated(prompt, imageUrls);
+            const generatedData = await generateImage(prompt, aspectRatio, imageCount);
+            setGeneratedImages(generatedData.map(d => d.dataUrl));
+            onImagesGenerated(prompt, generatedData);
             onClose();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate image');
@@ -149,13 +149,13 @@ function App() {
   const characterForModal = modalImage ? characters.find(c => c.id === modalImage.characterId) : null;
   const allGeneratedImagesForChar = characterForModal ? characterForModal.generatedImages : [];
 
-  const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string) => {
-    addGeneratedImage(characterId, prompt, dataUrl, parentId);
+  const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any) => {
+    addGeneratedImage(characterId, prompt, dataUrl, parentId, usageMetadata);
   };
 
-  const handleQuickGenerate = (prompt: string, dataUrls: string[]) => {
-    dataUrls.forEach(url => {
-        addGeneratedImage(QUICK_GEN_CHARACTER_ID, prompt, url);
+  const handleQuickGenerate = (prompt: string, generatedData: { dataUrl: string; usageMetadata?: any }[]) => {
+    generatedData.forEach(item => {
+        addGeneratedImage(QUICK_GEN_CHARACTER_ID, prompt, item.dataUrl, undefined, item.usageMetadata);
     });
     setSelectedCharacterId(QUICK_GEN_CHARACTER_ID);
   };

@@ -8,7 +8,7 @@ interface ImageModalProps {
   image: GeneratedImage | null;
   characterName?: string;
   onClose: () => void;
-  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string) => void;
+  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any) => void;
   onDeleteImage: (characterId: string, imageId: string) => void;
   allGeneratedImages: GeneratedImage[];
   onSelectImage: (image: GeneratedImage) => void;
@@ -93,7 +93,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsEditing(true);
     setError(null);
     try {
-      const editedImageUrl = await editImage(editPrompt, image);
+      const { dataUrl: editedImageUrl, usageMetadata } = await editImage(editPrompt, image);
       const newImage = {
         id: `gen_${Date.now()}`,
         dataUrl: editedImageUrl,
@@ -101,7 +101,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
         characterId: image.characterId,
         parentId: image.id,
       };
-      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id);
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, usageMetadata);
       setEditPrompt('');
       onSelectImage(newImage);
     } catch (err) {
@@ -115,7 +115,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsEnhancing(true);
     setError(null);
     try {
-        const enhancedImageUrl = await enhanceImage(image);
+        const { dataUrl: enhancedImageUrl, usageMetadata } = await enhanceImage(image);
         const newImage = {
             id: `gen_${Date.now()}`,
             dataUrl: enhancedImageUrl,
@@ -123,7 +123,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             characterId: image.characterId,
             parentId: image.id,
         };
-        onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id);
+        onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, usageMetadata);
         onSelectImage(newImage);
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to enhance image');
@@ -143,7 +143,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
       const aspectRatio = dimensions ? `${dimensions.width}:${dimensions.height}` : '1:1';
       const safeAspectRatio = ['1:1', '4:3', '3:4'].includes(aspectRatio.split(':').sort((a,b)=>+b-+a).join(':')) ? aspectRatio : '1:1';
       
-      const regeneratedImageUrl = await generateWithCharacter(image.prompt, characterReferenceImages, safeAspectRatio);
+      const { dataUrl: regeneratedImageUrl, usageMetadata } = await generateWithCharacter(image.prompt, characterReferenceImages, safeAspectRatio);
       
       const newImage = {
           id: `gen_${Date.now()}`,
@@ -152,7 +152,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
           characterId: image.characterId,
           parentId: image.parentId, // Keep the same parent if it exists
       };
-      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.parentId);
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.parentId, usageMetadata);
       onSelectImage(newImage);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to regenerate image');
@@ -240,15 +240,25 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                 <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
                 {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-yellow-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
                 <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p><p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p></div>
+                {image.usageMetadata && (
+                    <div className="mb-4">
+                        <p className="text-sm text-slate-400 mb-1 font-semibold">Token Usage</p>
+                        <div className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-xs font-mono">
+                            <div className="flex justify-between"><span>Prompt:</span> <span>{image.usageMetadata.promptTokenCount}</span></div>
+                            <div className="flex justify-between"><span>Output:</span> <span>{image.usageMetadata.candidatesTokenCount}</span></div>
+                            <div className="flex justify-between border-t border-slate-600 mt-1 pt-1"><span>Total:</span> <span>{image.usageMetadata.totalTokenCount}</span></div>
+                        </div>
+                    </div>
+                )}
                 <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"><div className="w-4 h-4">{ICONS.download}</div> Download</button>
-                <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div> {copyStatus}</button>
-                <button onClick={handleEnhance} disabled={isEnhancing} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isEnhancing ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.sparkles}</div>} {isEnhancing ? '...' : 'Enhance'}</button>
-                <button onClick={handleRegenerate} disabled={isRegenerating || !characterReferenceImages} title={!characterReferenceImages ? 'Reference images unavailable' : 'Generate a new image with the same prompt'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isRegenerating ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.regenerate}</div>} {isRegenerating ? '...' : 'Regen'}</button>
-                <button onClick={handleDelete} className="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"><div className="w-4 h-4">{ICONS.trash}</div> Delete</button>
+                <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1.5 text-sm"><div className="w-4 h-4">{ICONS.download}</div><span>Download</span></button>
+                <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1.5 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div><span>{copyStatus}</span></button>
+                <button onClick={handleEnhance} disabled={isEnhancing} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isEnhancing ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.sparkles}</div>}<span>{isEnhancing ? '...' : 'Enhance'}</span></button>
+                <button onClick={handleRegenerate} disabled={isRegenerating || !characterReferenceImages} title={!characterReferenceImages ? 'Reference images unavailable' : 'Generate a new image with the same prompt'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isRegenerating ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.regenerate}</div>}<span>{isRegenerating ? '...' : 'Regen'}</span></button>
+                <button onClick={handleDelete} className="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-1.5 text-sm"><div className="w-4 h-4">{ICONS.trash}</div><span>Delete</span></button>
             </div>
             
             {(parentImage || childImages.length > 0) && (

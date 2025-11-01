@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.13] - 2024-08-01
+
+### Added
+- Displayed token usage (prompt, output, total) for generated images in the image details view.
+
+### Fixed
+- Corrected the alignment and spacing of icons and text within the action buttons in the image viewer for a cleaner look.
+
 ## [0.0.12] - 2024-08-01
 
 ### Added
