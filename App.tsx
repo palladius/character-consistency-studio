@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import Workspace from './components/Workspace';
 import ImageModal from './components/ImageModal';
@@ -6,6 +6,7 @@ import { useCharacterManager, QUICK_GEN_CHARACTER_ID } from './hooks/useCharacte
 import { GeneratedImage } from './types';
 import { generateImage } from './services/geminiService';
 import { ICONS, QUICK_GENERATE_PROMPTS } from './constants';
+import { TOKEN_COSTS } from './config';
 import Loader from './components/Loader';
 import Footer from './components/Footer';
 
@@ -149,6 +150,29 @@ function App() {
   const characterForModal = modalImage ? characters.find(c => c.id === modalImage.characterId) : null;
   const allGeneratedImagesForChar = characterForModal ? characterForModal.generatedImages : [];
 
+  const usageStats = useMemo(() => {
+    let totalImages = 0;
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+
+    for (const char of characters) {
+        totalImages += char.generatedImages.length;
+        for (const img of char.generatedImages) {
+            if (img.usageMetadata) {
+                totalInputTokens += img.usageMetadata.promptTokenCount || 0;
+                totalOutputTokens += img.usageMetadata.candidatesTokenCount || 0;
+            }
+        }
+    }
+    
+    const inputCost = (totalInputTokens / 1_000_000) * TOKEN_COSTS.INPUT_PER_MILLION_USD;
+    const outputCost = (totalOutputTokens / 1_000_000) * TOKEN_COSTS.OUTPUT_PER_MILLION_USD;
+    const estimatedCost = inputCost + outputCost;
+    const totalTokens = totalInputTokens + totalOutputTokens;
+
+    return { totalImages, totalTokens, estimatedCost };
+  }, [characters]);
+
   const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any) => {
     addGeneratedImage(characterId, prompt, dataUrl, parentId, usageMetadata);
   };
@@ -212,7 +236,11 @@ function App() {
         </div>
       </div>
       
-      <Footer />
+      <Footer 
+        totalImages={usageStats.totalImages}
+        totalTokens={usageStats.totalTokens}
+        estimatedCost={usageStats.estimatedCost}
+      />
       
       {modalImage && (
         <ImageModal 

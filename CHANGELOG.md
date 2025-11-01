@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.15] - 2024-08-01
+
+### Added
+- Added an explanatory note in the image details view for "Quick Generate" images to clarify that token usage data is not provided by the Imagen 4 model API.
+
+## [0.0.14] - 2024-08-01
+
+### Added
+- Implemented a global statistics footer displaying total images generated, total tokens used, and an estimated session cost in USD.
+- Created a `config.ts` file to manage cost-per-token constants for easy updates.
+
+### Changed
+- Relocated the token usage information in the image details view to the very bottom and made it smaller to de-emphasize it.
+
 ## [0.0.13] - 2024-08-01
 
 ### Added
@@ -33,7 +47,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Expanded the list of suggestion prompts with 8 new creative options, including fantasy, historical, and various cartoon styles to inspire more diverse image generations.
 
-## [0.0.8] - 2024-08-01
+## [0.e.g.8] - 2024-08-01
 
 ### Changed
 - Replaced the primary purple accent color with a vibrant yellow throughout the application for a fresh, new look and feel.
@@ -63,7 +77,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Replaced the non-functional "Upscale" feature with "Enhance Quality". This new feature focuses on improving image details, sharpness, and lighting at the original resolution, providing a more reliable enhancement.
 
-## [0.e.g.3] - 2024-07-31
+## [0.0.3] - 2024-07-31
 
 ### Added
 - Implemented a full-screen image viewer for a more immersive experience when inspecting generated images.
