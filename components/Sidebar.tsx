@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
                 <div
                     onClick={() => onSelectCharacter(quickGenChar.id)}
                     className={`flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${
-                    selectedCharacterId === quickGenChar.id ? 'bg-purple-600/30 text-white font-semibold' : 'hover:bg-slate-800 text-slate-300'
+                    selectedCharacterId === quickGenChar.id ? 'bg-yellow-400/20 text-white font-semibold' : 'hover:bg-slate-800 text-slate-300'
                     }`}
                 >
                     <div className="w-5 h-5">{ICONS.image}</div>
@@ -78,10 +78,10 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
                 onKeyDown={handleKeyDown}
                 placeholder="New character name..."
                 autoFocus
-                className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-colors"
             />
             <div className="flex gap-2 mt-2">
-                <button onClick={handleAddCharacter} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded-md transition-colors text-sm">Save</button>
+                <button onClick={handleAddCharacter} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold py-1 px-2 rounded-md transition-colors text-sm">Save</button>
                 <button onClick={() => setIsAdding(false)} className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-1 px-2 rounded-md transition-colors text-sm">Cancel</button>
             </div>
             </div>
@@ -93,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
               <div
                 onClick={() => onSelectCharacter(char.id)}
                 className={`flex justify-between items-center p-3 rounded-md cursor-pointer transition-colors mb-1 ${
-                  selectedCharacterId === char.id ? 'bg-purple-600/30 text-white' : 'hover:bg-slate-800 text-slate-300'
+                  selectedCharacterId === char.id ? 'bg-yellow-400/20 text-white' : 'hover:bg-slate-800 text-slate-300'
                 }`}
               >
                 <span>{char.name}</span>

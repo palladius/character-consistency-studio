@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
                         href="https://github.com/palladius/character-consistency-studio" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="hover:text-purple-400 transition-colors"
+                        className="hover:text-yellow-400 transition-colors"
                     >
                         GitHub Repository
                     </a>

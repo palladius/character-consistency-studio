@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.8] - 2024-08-01
+
+### Changed
+- Replaced the primary purple accent color with a vibrant yellow throughout the application for a fresh, new look and feel.
+
 ## [0.0.7] - 2024-08-01
 
 ### Changed

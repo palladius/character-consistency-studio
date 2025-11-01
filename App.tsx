@@ -69,9 +69,9 @@ const StandaloneGenerator: React.FC<StandaloneGeneratorProps> = ({onClose, onIma
                         onChange={e => setPrompt(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleGenerate()}
                         placeholder="A photorealistic image of a cat astronaut..."
-                        className="flex-grow p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                        className="flex-grow p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-colors"
                     />
-                    <button onClick={handleGenerate} disabled={isLoading} className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-3 px-6 rounded-md transition-colors">
+                    <button onClick={handleGenerate} disabled={isLoading} className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-slate-600 text-slate-900 font-bold py-3 px-6 rounded-md transition-colors">
                         {isLoading ? '...' : 'Generate'}
                     </button>
                 </div>
@@ -85,7 +85,7 @@ const StandaloneGenerator: React.FC<StandaloneGeneratorProps> = ({onClose, onIma
                                 onClick={() => setAspectRatio(value)}
                                 className={`p-1.5 rounded-md transition-colors ${
                                 aspectRatio === value
-                                    ? 'bg-purple-600 text-white'
+                                    ? 'bg-yellow-500 text-slate-900'
                                     : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                                 }`}
                             >
@@ -102,7 +102,7 @@ const StandaloneGenerator: React.FC<StandaloneGeneratorProps> = ({onClose, onIma
                                 onClick={() => setImageCount(count)}
                                 className={`px-2.5 py-1 text-sm font-bold rounded-md transition-colors ${
                                 imageCount === count
-                                    ? 'bg-purple-600 text-white'
+                                    ? 'bg-yellow-500 text-slate-900'
                                     : 'text-slate-300 hover:bg-slate-700'
                                 }`}
                             >

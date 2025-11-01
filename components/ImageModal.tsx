@@ -211,7 +211,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                             const opacity = Math.max(1 - distance * 0.3, 0.2);
 
                             return (
-                                <img key={thumb.id} src={thumb.dataUrl} onClick={() => onSelectImage(thumb)} alt="thumbnail" className="w-24 h-24 object-cover rounded-md cursor-pointer transition-all duration-300 ease-out flex-shrink-0" style={{ transform: `scale(${scale})`, opacity: opacity, boxShadow: index === currentIndex ? '0 0 15px 5px rgba(168, 85, 247, 0.6)' : '0 10px 15px -3px rgb(0 0 0 / 0.4)', border: index === currentIndex ? '3px solid rgb(168 85 247)' : '3px solid transparent' }} />
+                                <img key={thumb.id} src={thumb.dataUrl} onClick={() => onSelectImage(thumb)} alt="thumbnail" className="w-24 h-24 object-cover rounded-md cursor-pointer transition-all duration-300 ease-out flex-shrink-0" style={{ transform: `scale(${scale})`, opacity: opacity, boxShadow: index === currentIndex ? '0 0 15px 5px rgba(250, 204, 21, 0.6)' : '0 10px 15px -3px rgb(0 0 0 / 0.4)', border: index === currentIndex ? '3px solid rgb(250 204 21)' : '3px solid transparent' }} />
                             )
                         })}
                     </div>
@@ -228,7 +228,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             
             <div>
                 <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
-                {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
+                {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-yellow-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
                 <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p><p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p></div>
                 <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
             </div>
@@ -245,12 +245,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                     <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2">{ICONS.history} Image History</h3>
                     {parentImage && <div className="mb-3">
                         <p className="text-sm text-slate-400 mb-2 font-semibold">Original Image</p>
-                        <img src={parentImage.dataUrl} onClick={() => onSelectImage(parentImage)} alt="Parent" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-purple-500"/>
+                        <img src={parentImage.dataUrl} onClick={() => onSelectImage(parentImage)} alt="Parent" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-yellow-400"/>
                     </div>}
                     {childImages.length > 0 && <div>
                         <p className="text-sm text-slate-400 mb-2 font-semibold">Edits & Enhancements ({childImages.length})</p>
                         <div className="flex flex-wrap gap-2">
-                        {childImages.map(child => <img key={child.id} src={child.dataUrl} onClick={() => onSelectImage(child)} alt="Child" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-purple-500"/>)}
+                        {childImages.map(child => <img key={child.id} src={child.dataUrl} onClick={() => onSelectImage(child)} alt="Child" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-yellow-400"/>)}
                         </div>
                     </div>}
                 </div>
@@ -262,8 +262,8 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
               
               {isEditing || isRegenerating ? ( <div className="py-8"><Loader text={isEditing ? "Applying edits..." : "Regenerating image..."} /></div>) : (
                 <>
-                  <textarea value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., add a retro filter, make the background a forest..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"/>
-                  <button onClick={handleEdit} disabled={isEditing || isEnhancing || isRegenerating} className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
+                  <textarea value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., add a retro filter, make the background a forest..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-colors"/>
+                  <button onClick={handleEdit} disabled={isEditing || isEnhancing || isRegenerating} className="w-full mt-4 bg-yellow-500 hover:bg-yellow-600 disabled:bg-slate-600 text-slate-900 font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
                     {ICONS.sparkles} Apply Changes
                   </button>
                   {error && <p className="text-red-400 text-sm mt-4">{error}</p>}

@@ -70,7 +70,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ title, images, onAddImages, onDel
                     onDownloadImage(image);
                   }}
                   aria-label="Download image"
-                  className="absolute bottom-2 right-2 p-1.5 bg-slate-700/80 hover:bg-purple-500 rounded-full text-white transition-colors">
+                  className="absolute bottom-2 right-2 p-1.5 bg-slate-700/80 hover:bg-yellow-500 rounded-full text-white transition-colors">
                   <div className="w-4 h-4">{ICONS.download}</div>
                  </button>
                )}
@@ -80,7 +80,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ title, images, onAddImages, onDel
         {onAddImages && characterImageCount < MAX_IMAGES && (
           <button
             onClick={handleAddClick}
-            className="aspect-square rounded-lg border-2 border-dashed border-slate-600 hover:border-purple-500 hover:bg-slate-800 transition-colors flex flex-col items-center justify-center text-slate-400 hover:text-purple-400"
+            className="aspect-square rounded-lg border-2 border-dashed border-slate-600 hover:border-yellow-400 hover:bg-slate-800 transition-colors flex flex-col items-center justify-center text-slate-400 hover:text-yellow-400"
           >
             <div className="w-8 h-8 mb-2">{ICONS.upload}</div>
             <span className="text-sm font-medium">Add Images</span>

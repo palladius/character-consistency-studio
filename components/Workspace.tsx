@@ -144,7 +144,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
           onChange={e => setPrompt(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleGenerate(prompt)}
           placeholder="Describe a scene, style, or action..."
-          className="flex-grow p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+          className="flex-grow p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-colors"
         />
         <div className="flex items-center gap-1 bg-slate-700 border border-slate-600 rounded-md p-1">
           {generationCounts.map(count => (
@@ -154,7 +154,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
               onClick={() => setImageCount(count)}
               className={`px-3 py-1.5 text-sm font-bold rounded-md transition-colors ${
                 imageCount === count
-                  ? 'bg-purple-600 text-white'
+                  ? 'bg-yellow-500 text-slate-900'
                   : 'text-slate-300 hover:bg-slate-600'
               }`}
             >
@@ -165,7 +165,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         <button
           onClick={() => handleGenerate(prompt)}
           disabled={isLoading}
-          className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-3 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
+          className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-slate-600 text-slate-900 font-bold py-3 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
         >
           {isLoading ? 'Generating...' : <>{ICONS.sparkles}<span>Generate</span></>}
         </button>
@@ -198,7 +198,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
                 onClick={() => setAspectRatio(value)}
                 className={`p-2 rounded-md transition-colors ${
                     aspectRatio === value
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-yellow-500 text-slate-900'
                     : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
                 }`}
                 >
