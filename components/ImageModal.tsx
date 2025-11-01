@@ -9,12 +9,13 @@ interface ImageModalProps {
   characterName?: string;
   onClose: () => void;
   onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string) => void;
+  onDeleteImage: (characterId: string, imageId: string) => void;
   allGeneratedImages: GeneratedImage[];
   onSelectImage: (image: GeneratedImage) => void;
   characterReferenceImages?: {id: string; dataUrl: string}[]; // Needed for regenerate
 }
 
-const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, onImageUpdate, allGeneratedImages, onSelectImage, characterReferenceImages }) => {
+const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, onImageUpdate, onDeleteImage, allGeneratedImages, onSelectImage, characterReferenceImages }) => {
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -69,6 +70,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+            return;
+        }
         if (e.key === 'ArrowRight' || e.key === ' ') {
             e.preventDefault();
             handleNext();
@@ -167,6 +171,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     document.body.removeChild(link);
   };
 
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to permanently delete this image?')) {
+        onDeleteImage(image.characterId, image.id);
+    }
+  };
+
   const handleCopy = async () => {
     if (copyStatus !== 'Copy' || !navigator.clipboard) return;
     try {
@@ -233,11 +243,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                 <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"><div className="w-4 h-4">{ICONS.download}</div> Download</button>
                 <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div> {copyStatus}</button>
                 <button onClick={handleEnhance} disabled={isEnhancing} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isEnhancing ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.sparkles}</div>} {isEnhancing ? '...' : 'Enhance'}</button>
                 <button onClick={handleRegenerate} disabled={isRegenerating || !characterReferenceImages} title={!characterReferenceImages ? 'Reference images unavailable' : 'Generate a new image with the same prompt'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isRegenerating ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.regenerate}</div>} {isRegenerating ? '...' : 'Regen'}</button>
+                <button onClick={handleDelete} className="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"><div className="w-4 h-4">{ICONS.trash}</div> Delete</button>
             </div>
             
             {(parentImage || childImages.length > 0) && (

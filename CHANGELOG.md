@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.12] - 2024-08-01
+
+### Added
+- Added a "Delete" button to the image detail viewer for easier management of generated images.
+
+### Fixed
+- Corrected a bug where keyboard shortcuts (Space, Arrow Keys) in the image viewer would trigger while typing in the "Edit Image" textarea.
+
 ## [0.0.11] - 2024-08-01
 
 ### Added

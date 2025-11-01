@@ -160,6 +160,28 @@ function App() {
     setSelectedCharacterId(QUICK_GEN_CHARACTER_ID);
   };
 
+  const handleDeleteImageFromModal = (characterId: string, imageId: string) => {
+    const char = characters.find(c => c.id === characterId);
+    if (!char) return;
+
+    const currentImages = char.generatedImages;
+    const indexToDelete = currentImages.findIndex(i => i.id === imageId);
+    if (indexToDelete === -1) return;
+    
+    const remainingImages = currentImages.filter(i => i.id !== imageId);
+    
+    deleteGeneratedImage(characterId, imageId);
+
+    if (remainingImages.length === 0) {
+      setModalImage(null);
+    } else {
+      const nextIndexToShow = indexToDelete >= remainingImages.length 
+        ? remainingImages.length - 1 
+        : indexToDelete;
+      setModalImage(remainingImages[nextIndexToShow]);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen font-sans bg-slate-900">
       <div className="flex flex-1 overflow-hidden">
@@ -198,6 +220,7 @@ function App() {
           characterName={characterForModal?.name}
           onClose={() => setModalImage(null)}
           onImageUpdate={handleImageUpdate}
+          onDeleteImage={handleDeleteImageFromModal}
           allGeneratedImages={allGeneratedImagesForChar}
           onSelectImage={setModalImage}
           characterReferenceImages={characterForModal?.referenceImages}
