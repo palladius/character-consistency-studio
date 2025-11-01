@@ -147,6 +147,22 @@ const Workspace: React.FC<WorkspaceProps> = ({
           className="flex-grow p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-colors"
         />
         <div className="flex items-center gap-1 bg-slate-700 border border-slate-600 rounded-md p-1">
+            {aspectRatios.map(({ value, icon, label }) => (
+                <button
+                key={value}
+                title={label}
+                onClick={() => setAspectRatio(value)}
+                className={`p-1.5 rounded-md transition-colors ${
+                    aspectRatio === value
+                    ? 'bg-yellow-500 text-slate-900'
+                    : 'text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                }`}
+                >
+                <div className="w-5 h-5">{icon}</div>
+                </button>
+            ))}
+        </div>
+        <div className="flex items-center gap-1 bg-slate-700 border border-slate-600 rounded-md p-1">
           {generationCounts.map(count => (
             <button
               key={count}
@@ -189,24 +205,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
     <main className="flex-grow p-6 bg-slate-900 overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-white">{isQuickGenWorkspace ? character.name : `Editing: ${character.name}`}</h2>
-        {!isQuickGenWorkspace && (
-            <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-lg">
-            {aspectRatios.map(({ value, icon, label }) => (
-                <button
-                key={value}
-                title={label}
-                onClick={() => setAspectRatio(value)}
-                className={`p-2 rounded-md transition-colors ${
-                    aspectRatio === value
-                    ? 'bg-yellow-500 text-slate-900'
-                    : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                }`}
-                >
-                <div className="w-6 h-6">{icon}</div>
-                </button>
-            ))}
-            </div>
-        )}
       </div>
       
       {!isQuickGenWorkspace && !isReadyToGenerate && (

@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.11] - 2024-08-01
+
+### Added
+- Added two new creative suggestion prompts: one for a Japanese ink wash style and one to transform the character into a collectible action figure.
+
+## [0.0.10] - 2024-08-01
+
+### Changed
+- Thoroughly updated the `USER_MANUAL.md` to document all recent features, including aspect ratio/cardinality selectors, regeneration, and the Quick Generate workflow.
+
+## [0.0.9] - 2024-08-01
+
+### Added
+- Expanded the list of suggestion prompts with 8 new creative options, including fantasy, historical, and various cartoon styles to inspire more diverse image generations.
+
 ## [0.0.8] - 2024-08-01
 
 ### Changed
@@ -32,7 +47,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Replaced the non-functional "Upscale" feature with "Enhance Quality". This new feature focuses on improving image details, sharpness, and lighting at the original resolution, providing a more reliable enhancement.
 
-## [0.0.3] - 2024-07-31
+## [0.e.g.3] - 2024-07-31
 
 ### Added
 - Implemented a full-screen image viewer for a more immersive experience when inspecting generated images.
