@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Workspace from './components/Workspace';
 import ImageModal from './components/ImageModal';
-import { useCharacterManager } from './hooks/useCharacterManager';
+import { useCharacterManager, QUICK_GEN_CHARACTER_ID } from './hooks/useCharacterManager';
 import { GeneratedImage } from './types';
 import { generateImage } from './services/geminiService';
 import { ICONS, QUICK_GENERATE_PROMPTS } from './constants';
@@ -15,7 +15,14 @@ const aspectRatios = [
     { value: '3:4', icon: ICONS.aspect3to4, label: 'Portrait (3:4)' },
 ];
 
-const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
+const generationCounts = [1, 2, 4];
+
+interface StandaloneGeneratorProps {
+    onClose: () => void;
+    onImagesGenerated: (prompt: string, dataUrls: string[]) => void;
+}
+
+const StandaloneGenerator: React.FC<StandaloneGeneratorProps> = ({onClose, onImagesGenerated}) => {
     const getRandomPrompt = () => {
         const randomIndex = Math.floor(Math.random() * QUICK_GENERATE_PROMPTS.length);
         return QUICK_GENERATE_PROMPTS[randomIndex];
@@ -24,28 +31,32 @@ const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
     const [prompt, setPrompt] = useState(getRandomPrompt());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+    const [generatedImages, setGeneratedImages] = useState<string[]>([]);
     const [aspectRatio, setAspectRatio] = useState('1:1');
+    const [imageCount, setImageCount] = useState(1);
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
         setIsLoading(true);
         setError(null);
-        setGeneratedImage(null);
+        setGeneratedImages([]);
         try {
-            const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-            const imageUrl = await generateImage(prompt, aspectRatio, seed);
-            setGeneratedImage(imageUrl);
+            const imageUrls = await generateImage(prompt, aspectRatio, imageCount);
+            setGeneratedImages(imageUrls);
+            onImagesGenerated(prompt, imageUrls);
+            onClose();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate image');
         } finally {
             setIsLoading(false);
         }
     };
+    
+    const gridCols = imageCount === 4 ? 'grid-cols-2' : 'grid-cols-1';
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center" onClick={onClose}>
-            <div className="bg-slate-800 rounded-lg shadow-2xl w-full max-w-2xl p-6" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-slate-800 rounded-lg shadow-2xl w-full max-w-3xl p-6" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold flex items-center gap-2">{ICONS.image} Quick Generate</h2>
                     <button onClick={onClose} className="p-1 text-slate-400 hover:text-white transition-colors">{ICONS.close}</button>
@@ -64,8 +75,9 @@ const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
                         {isLoading ? '...' : 'Generate'}
                     </button>
                 </div>
-                 <div className="flex items-center justify-center mb-4">
+                 <div className="flex items-center justify-center flex-wrap gap-4 mb-4">
                     <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg">
+                        <span className="text-xs text-slate-400 font-semibold px-2">Aspect Ratio</span>
                         {aspectRatios.map(({ value, icon, label }) => (
                             <button
                                 key={value}
@@ -81,13 +93,36 @@ const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
                             </button>
                         ))}
                     </div>
+                    <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg">
+                        <span className="text-xs text-slate-400 font-semibold px-2">Images</span>
+                         {generationCounts.map((count) => (
+                            <button
+                                key={count}
+                                title={`Generate ${count} image${count > 1 ? 's' : ''}`}
+                                onClick={() => setImageCount(count)}
+                                className={`px-2.5 py-1 text-sm font-bold rounded-md transition-colors ${
+                                imageCount === count
+                                    ? 'bg-purple-600 text-white'
+                                    : 'text-slate-300 hover:bg-slate-700'
+                                }`}
+                            >
+                                {count}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {error && <p className="text-red-400 mb-4 text-center">{error}</p>}
 
-                <div className="w-full aspect-square bg-slate-900 rounded-md flex items-center justify-center">
+                <div className="w-full aspect-square bg-slate-900 rounded-md flex items-center justify-center overflow-hidden">
                     {isLoading && <Loader text="Generating with Imagen..." />}
-                    {generatedImage && <img src={generatedImage} alt={prompt} className="max-w-full max-h-full object-contain rounded-md" />}
+                    {!isLoading && generatedImages.length > 0 && (
+                        <div className={`grid ${gridCols} gap-2 w-full h-full p-2`}>
+                            {generatedImages.map((src, index) => (
+                                <img key={index} src={src} alt={`${prompt} - ${index + 1}`} className="w-full h-full object-contain rounded-md" />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -114,8 +149,15 @@ function App() {
   const characterForModal = modalImage ? characters.find(c => c.id === modalImage.characterId) : null;
   const allGeneratedImagesForChar = characterForModal ? characterForModal.generatedImages : [];
 
-  const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string, seed?: number) => {
-    addGeneratedImage(characterId, prompt, dataUrl, parentId, seed);
+  const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string) => {
+    addGeneratedImage(characterId, prompt, dataUrl, parentId);
+  };
+
+  const handleQuickGenerate = (prompt: string, dataUrls: string[]) => {
+    dataUrls.forEach(url => {
+        addGeneratedImage(QUICK_GEN_CHARACTER_ID, prompt, url);
+    });
+    setSelectedCharacterId(QUICK_GEN_CHARACTER_ID);
   };
 
   return (
@@ -163,7 +205,10 @@ function App() {
       )}
 
       {showStandaloneGenerator && (
-        <StandaloneGenerator onClose={() => setShowStandaloneGenerator(false)} />
+        <StandaloneGenerator 
+            onClose={() => setShowStandaloneGenerator(false)} 
+            onImagesGenerated={handleQuickGenerate}
+        />
       )}
     </div>
   );

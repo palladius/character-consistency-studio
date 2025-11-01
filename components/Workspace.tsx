@@ -5,12 +5,13 @@ import { MIN_IMAGES, SUGGESTION_PROMPTS, ICONS } from '../constants';
 import { generateWithCharacter } from '../services/geminiService';
 import Loader from './Loader';
 import ImageGrid from './ImageGrid';
+import { QUICK_GEN_CHARACTER_ID } from '../hooks/useCharacterManager';
 
 interface WorkspaceProps {
   character: Character | null;
   onAddReferenceImages: (characterId: string, files: FileList) => void;
   onDeleteReferenceImage: (characterId: string, imageId: string) => void;
-  onAddGeneratedImage: (characterId: string, prompt: string, dataUrl: string, parentId?: string, seed?: number) => void;
+  onAddGeneratedImage: (characterId: string, prompt: string, dataUrl: string, parentId?: string) => void;
   onDeleteGeneratedImage: (characterId: string, imageId: string) => void;
   onImageClick: (image: GeneratedImage) => void;
 }
@@ -20,6 +21,8 @@ const aspectRatios = [
   { value: '4:3', icon: ICONS.aspect4to3, label: 'Landscape (4:3)' },
   { value: '3:4', icon: ICONS.aspect3to4, label: 'Portrait (3:4)' },
 ];
+
+const generationCounts = [1, 2, 4];
 
 const Workspace: React.FC<WorkspaceProps> = ({ 
   character, 
@@ -34,6 +37,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const [isZipping, setIsZipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [imageCount, setImageCount] = useState(1);
 
   if (!character) {
     return (
@@ -46,6 +50,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     );
   }
 
+  const isQuickGenWorkspace = character.id === QUICK_GEN_CHARACTER_ID;
   const isReadyToGenerate = character.referenceImages.length >= MIN_IMAGES;
 
   const handleGenerate = async (currentPrompt: string) => {
@@ -54,9 +59,26 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-      const generatedImageUrl = await generateWithCharacter(currentPrompt, character.referenceImages, aspectRatio, seed);
-      onAddGeneratedImage(character.id, currentPrompt, generatedImageUrl, undefined, seed);
+      const generationPromises = Array(imageCount).fill(0).map(() => 
+        generateWithCharacter(currentPrompt, character.referenceImages, aspectRatio)
+      );
+      
+      const results = await Promise.allSettled(generationPromises);
+      
+      let successCount = 0;
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          onAddGeneratedImage(character.id, currentPrompt, result.value);
+          successCount++;
+        } else {
+          console.error("A generation failed:", result.reason);
+        }
+      });
+
+      if (successCount === 0 && results.length > 0) {
+        throw new Error("All image generations failed. Check the console for details.");
+      }
+
       setPrompt('');
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred during generation.");
@@ -69,7 +91,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
     const link = document.createElement('a');
     link.href = image.dataUrl;
     const safePrompt = image.prompt.substring(0, 40).replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    link.download = `${character.name.replace(/\s/g, '_') || 'character'}_${safePrompt}.png`;
+    const fileName = isQuickGenWorkspace ? `quick-gen_${safePrompt}.png` : `${character.name.replace(/\s/g, '_')}_${safePrompt}.png`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -96,7 +119,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
       
       const link = document.createElement('a');
       link.href = URL.createObjectURL(zipBlob);
-      link.download = `${character.name.replace(/\s/g, '_')}_generated_images.zip`;
+      const zipName = isQuickGenWorkspace ? 'quick_generations.zip' : `${character.name.replace(/\s/g, '_')}_generated_images.zip`;
+      link.download = zipName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -122,12 +146,28 @@ const Workspace: React.FC<WorkspaceProps> = ({
           placeholder="Describe a scene, style, or action..."
           className="flex-grow p-3 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
         />
+        <div className="flex items-center gap-1 bg-slate-700 border border-slate-600 rounded-md p-1">
+          {generationCounts.map(count => (
+            <button
+              key={count}
+              title={`Generate ${count} image${count > 1 ? 's' : ''}`}
+              onClick={() => setImageCount(count)}
+              className={`px-3 py-1.5 text-sm font-bold rounded-md transition-colors ${
+                imageCount === count
+                  ? 'bg-purple-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              x{count}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => handleGenerate(prompt)}
           disabled={isLoading}
           className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-3 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
         >
-          {isLoading ? 'Generating...' : <>{ICONS.sparkles} Generate</>}
+          {isLoading ? 'Generating...' : <>{ICONS.sparkles}<span>Generate</span></>}
         </button>
       </div>
       <div className="flex flex-wrap gap-2 mt-4">
@@ -148,38 +188,48 @@ const Workspace: React.FC<WorkspaceProps> = ({
   return (
     <main className="flex-grow p-6 bg-slate-900 overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-white">Editing: {character.name}</h2>
-        <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-lg">
-          {aspectRatios.map(({ value, icon, label }) => (
-            <button
-              key={value}
-              title={label}
-              onClick={() => setAspectRatio(value)}
-              className={`p-2 rounded-md transition-colors ${
-                aspectRatio === value
-                  ? 'bg-purple-600 text-white'
-                  : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-            >
-              <div className="w-6 h-6">{icon}</div>
-            </button>
-          ))}
-        </div>
+        <h2 className="text-3xl font-bold text-white">{isQuickGenWorkspace ? character.name : `Editing: ${character.name}`}</h2>
+        {!isQuickGenWorkspace && (
+            <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-lg">
+            {aspectRatios.map(({ value, icon, label }) => (
+                <button
+                key={value}
+                title={label}
+                onClick={() => setAspectRatio(value)}
+                className={`p-2 rounded-md transition-colors ${
+                    aspectRatio === value
+                    ? 'bg-purple-600 text-white'
+                    : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                }`}
+                >
+                <div className="w-6 h-6">{icon}</div>
+                </button>
+            ))}
+            </div>
+        )}
       </div>
       
-      {!isReadyToGenerate && (
+      {!isQuickGenWorkspace && !isReadyToGenerate && (
         <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative mb-6" role="alert">
           <strong className="font-bold">Action Required: </strong>
           <span className="block sm:inline">Upload at least {MIN_IMAGES} reference images to start generating. You currently have {character.referenceImages.length}.</span>
         </div>
       )}
       
-      {isReadyToGenerate && renderGenerationUI()}
+      {!isQuickGenWorkspace && isReadyToGenerate && renderGenerationUI()}
 
-      {isLoading && !character.generatedImages.length && <div className="mt-8"><Loader text="Generating your first image..." /></div>}
+      {isLoading && !character.generatedImages.length && <div className="mt-8"><Loader text={`Generating ${imageCount} image${imageCount > 1 ? 's' : ''}...`} /></div>}
+
+      {isQuickGenWorkspace && character.generatedImages.length === 0 && (
+          <div className="text-center py-16">
+              <div className="w-16 h-16 mx-auto text-slate-600">{ICONS.image}</div>
+              <h3 className="text-xl font-semibold mt-4 text-slate-300">Your Quick Generations will appear here</h3>
+              <p className="text-slate-500 mt-1">Use the "Quick Generate" button to create images without a specific character.</p>
+          </div>
+      )}
 
       <ImageGrid
-        title="Generated Images"
+        title={isQuickGenWorkspace ? "All Generations" : "Generated Images"}
         images={character.generatedImages}
         onDeleteImage={(id) => onDeleteGeneratedImage(character.id, id)}
         onImageClick={onImageClick}
@@ -201,13 +251,15 @@ const Workspace: React.FC<WorkspaceProps> = ({
         }
       />
       
-      <ImageGrid
-        title="Reference Images"
-        images={character.referenceImages}
-        onAddImages={(files) => onAddReferenceImages(character.id, files)}
-        onDeleteImage={(id) => onDeleteReferenceImage(character.id, id)}
-        characterImageCount={character.referenceImages.length}
-      />
+      {!isQuickGenWorkspace && (
+        <ImageGrid
+            title="Reference Images"
+            images={character.referenceImages}
+            onAddImages={(files) => onAddReferenceImages(character.id, files)}
+            onDeleteImage={(id) => onDeleteReferenceImage(character.id, id)}
+            characterImageCount={character.referenceImages.length}
+        />
+      )}
     </main>
   );
 };

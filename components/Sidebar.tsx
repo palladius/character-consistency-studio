@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Character } from '../types';
 import { ICONS } from '../constants';
+import { QUICK_GEN_CHARACTER_ID } from '../hooks/useCharacterManager';
 
 interface SidebarProps {
   characters: Character[];
@@ -31,6 +32,9 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
     }
   };
 
+  const quickGenChar = characters.find(c => c.id === QUICK_GEN_CHARACTER_ID);
+  const userCharacters = characters.filter(c => c.id !== QUICK_GEN_CHARACTER_ID);
+
   return (
     <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4 overflow-y-auto">
       <div className="flex items-center gap-3 mb-6">
@@ -38,37 +42,53 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
         <h1 className="text-2xl font-bold text-white">Character Studio</h1>
       </div>
       
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-300 flex items-center gap-2">{ICONS.users} Characters</h2>
-        <button 
-          onClick={() => setIsAdding(true)}
-          className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
-        >
-          {ICONS.add}
-        </button>
-      </div>
-      
-      {isAdding && (
-        <div className="mb-4">
-          <input
-            type="text"
-            value={newCharName}
-            onChange={(e) => setNewCharName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="New character name..."
-            autoFocus
-            className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-          />
-          <div className="flex gap-2 mt-2">
-            <button onClick={handleAddCharacter} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded-md transition-colors text-sm">Save</button>
-            <button onClick={() => setIsAdding(false)} className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-1 px-2 rounded-md transition-colors text-sm">Cancel</button>
-          </div>
-        </div>
-      )}
-
       <nav className="flex-grow">
+        {quickGenChar && (
+            <div className="mb-4">
+                <div
+                    onClick={() => onSelectCharacter(quickGenChar.id)}
+                    className={`flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${
+                    selectedCharacterId === quickGenChar.id ? 'bg-purple-600/30 text-white font-semibold' : 'hover:bg-slate-800 text-slate-300'
+                    }`}
+                >
+                    <div className="w-5 h-5">{ICONS.image}</div>
+                    <span>{quickGenChar.name}</span>
+                </div>
+            </div>
+        )}
+
+        <hr className="border-slate-800 mb-4"/>
+
+        <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-300 flex items-center gap-2">{ICONS.users} Characters</h2>
+            <button 
+            onClick={() => setIsAdding(true)}
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+            >
+            {ICONS.add}
+            </button>
+        </div>
+        
+        {isAdding && (
+            <div className="mb-4">
+            <input
+                type="text"
+                value={newCharName}
+                onChange={(e) => setNewCharName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="New character name..."
+                autoFocus
+                className="w-full p-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+            />
+            <div className="flex gap-2 mt-2">
+                <button onClick={handleAddCharacter} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded-md transition-colors text-sm">Save</button>
+                <button onClick={() => setIsAdding(false)} className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-1 px-2 rounded-md transition-colors text-sm">Cancel</button>
+            </div>
+            </div>
+        )}
+
         <ul>
-          {characters.map(char => (
+          {userCharacters.map(char => (
             <li key={char.id} className="group">
               <div
                 onClick={() => onSelectCharacter(char.id)}

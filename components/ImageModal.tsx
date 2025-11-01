@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GeneratedImage } from '../types';
 import Loader from './Loader';
@@ -9,7 +8,7 @@ interface ImageModalProps {
   image: GeneratedImage | null;
   characterName?: string;
   onClose: () => void;
-  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string, seed?: number) => void;
+  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string) => void;
   allGeneratedImages: GeneratedImage[];
   onSelectImage: (image: GeneratedImage) => void;
   characterReferenceImages?: {id: string; dataUrl: string}[]; // Needed for regenerate
@@ -22,7 +21,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('Copy');
-  const [seedCopyStatus, setSeedCopyStatus] = useState('Copy');
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
@@ -47,7 +45,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
       setEditPrompt('');
       setError(null);
       setCopyStatus('Copy');
-      setSeedCopyStatus('Copy');
       setIsEditing(false);
       setIsEnhancing(false);
       setIsRegenerating(false);
@@ -92,17 +89,15 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsEditing(true);
     setError(null);
     try {
-      const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-      const editedImageUrl = await editImage(editPrompt, image, seed);
+      const editedImageUrl = await editImage(editPrompt, image);
       const newImage = {
         id: `gen_${Date.now()}`,
         dataUrl: editedImageUrl,
         prompt: `Edit: ${editPrompt} (from original: ${image.prompt})`,
         characterId: image.characterId,
         parentId: image.id,
-        seed,
       };
-      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, newImage.seed);
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id);
       setEditPrompt('');
       onSelectImage(newImage);
     } catch (err) {
@@ -116,17 +111,15 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsEnhancing(true);
     setError(null);
     try {
-        const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-        const enhancedImageUrl = await enhanceImage(image, seed);
+        const enhancedImageUrl = await enhanceImage(image);
         const newImage = {
             id: `gen_${Date.now()}`,
             dataUrl: enhancedImageUrl,
             prompt: `Enhanced: ${image.prompt}`,
             characterId: image.characterId,
             parentId: image.id,
-            seed,
         };
-        onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, newImage.seed);
+        onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id);
         onSelectImage(newImage);
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to enhance image');
@@ -143,14 +136,10 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsRegenerating(true);
     setError(null);
     try {
-      // Determine aspect ratio from image dimensions if possible
       const aspectRatio = dimensions ? `${dimensions.width}:${dimensions.height}` : '1:1';
-      // A simple approximation. This won't perfectly match the original aspect ratio buttons, but is better than nothing.
-      // A more robust solution would be to store the aspect ratio with the image.
       const safeAspectRatio = ['1:1', '4:3', '3:4'].includes(aspectRatio.split(':').sort((a,b)=>+b-+a).join(':')) ? aspectRatio : '1:1';
       
-      const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-      const regeneratedImageUrl = await generateWithCharacter(image.prompt, characterReferenceImages, safeAspectRatio, seed);
+      const regeneratedImageUrl = await generateWithCharacter(image.prompt, characterReferenceImages, safeAspectRatio);
       
       const newImage = {
           id: `gen_${Date.now()}`,
@@ -158,9 +147,8 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
           prompt: image.prompt, // Same prompt
           characterId: image.characterId,
           parentId: image.parentId, // Keep the same parent if it exists
-          seed,
       };
-      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.parentId, newImage.seed);
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.parentId);
       onSelectImage(newImage);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to regenerate image');
@@ -196,17 +184,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     }
   };
 
-  const handleCopySeed = () => {
-    if (seedCopyStatus !== 'Copy' || !navigator.clipboard || !image.seed) return;
-    navigator.clipboard.writeText(image.seed.toString()).then(() => {
-        setSeedCopyStatus('Copied!');
-        setTimeout(() => setSeedCopyStatus('Copy'), 2000);
-    }, () => {
-        setSeedCopyStatus('Error!');
-        setTimeout(() => setSeedCopyStatus('Copy'), 2000);
-    });
-  };
-  
   const parentImage = image.parentId ? allGeneratedImages.find(i => i.id === image.parentId) : null;
   const childImages = allGeneratedImages.filter(i => i.parentId === image.id);
 
@@ -253,7 +230,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                 <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
                 {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
                 <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p><p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p></div>
-                {image.seed && (<div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Seed</p><div className="flex items-center gap-2"><p className="flex-grow text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-mono">{image.seed}</p><button onClick={handleCopySeed} className="bg-slate-600 hover:bg-slate-500 text-white font-bold p-2 rounded-md transition-colors text-xs flex items-center gap-1"><div className="w-3 h-3">{ICONS.copy}</div>{seedCopyStatus}</button></div></div>)}
                 <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
             </div>
 

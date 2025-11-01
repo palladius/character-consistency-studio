@@ -1,17 +1,23 @@
-
 import { useState, useCallback } from 'react';
 import { Character, Image, GeneratedImage } from '../types';
 import { fileToDataUrl } from '../utils/fileUtils';
 
+export const QUICK_GEN_CHARACTER_ID = 'QUICK_GEN_CHARACTER';
+
+const quickGenCharacter: Character = {
+  id: QUICK_GEN_CHARACTER_ID,
+  name: 'Quick Generations',
+  referenceImages: [],
+  generatedImages: [],
+};
+
 const initialCharacters: Character[] = [
-    // You can add default characters here for testing
+    quickGenCharacter,
 ];
 
 export const useCharacterManager = () => {
   const [characters, setCharacters] = useState<Character[]>(initialCharacters);
-  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(
-    initialCharacters.length > 0 ? initialCharacters[0].id : null
-  );
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
 
   const addCharacter = useCallback((name: string) => {
     if (!name.trim()) return;
@@ -26,9 +32,12 @@ export const useCharacterManager = () => {
   }, []);
 
   const deleteCharacter = useCallback((id: string) => {
+    if (id === QUICK_GEN_CHARACTER_ID) return; // Prevent deletion of special character
+
     setCharacters(prev => prev.filter(c => c.id !== id));
     if (selectedCharacterId === id) {
-      setSelectedCharacterId(characters.length > 1 ? characters.filter(c => c.id !== id)[0].id : null);
+      const remainingUserChars = characters.filter(c => c.id !== id && c.id !== QUICK_GEN_CHARACTER_ID);
+      setSelectedCharacterId(remainingUserChars.length > 0 ? remainingUserChars[0].id : QUICK_GEN_CHARACTER_ID);
     }
   }, [characters, selectedCharacterId]);
 
@@ -52,14 +61,13 @@ export const useCharacterManager = () => {
     ));
   }, []);
 
-  const addGeneratedImage = useCallback((characterId: string, prompt: string, dataUrl: string, parentId?: string, seed?: number) => {
+  const addGeneratedImage = useCallback((characterId: string, prompt: string, dataUrl: string, parentId?: string) => {
     const newImage: GeneratedImage = {
-      id: `gen_${Date.now()}`,
+      id: `gen_${Date.now()}_${Math.random()}`,
       dataUrl,
       prompt,
       characterId,
       parentId,
-      seed,
     };
     setCharacters(prev => prev.map(c => 
       c.id === characterId ? { ...c, generatedImages: [newImage, ...c.generatedImages] } : c

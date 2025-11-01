@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Image } from '../types';
 
@@ -20,7 +19,7 @@ const getMimeType = (dataUrl: string): string => {
     return dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
 };
 
-export const generateWithCharacter = async (prompt: string, referenceImages: Image[], aspectRatio: string, seed?: number): Promise<string> => {
+export const generateWithCharacter = async (prompt: string, referenceImages: Image[], aspectRatio: string): Promise<string> => {
     const gemini = getAI();
     
     const imageParts = referenceImages.map(img => ({
@@ -44,7 +43,6 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
         },
         config: {
             responseModalities: [Modality.IMAGE],
-            ...(seed && { seed }),
         },
     });
 
@@ -62,7 +60,7 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
     throw new Error("No image generated. The model did not return an image.");
 };
 
-export const editImage = async (prompt: string, baseImage: Image, seed?: number): Promise<string> => {
+export const editImage = async (prompt: string, baseImage: Image): Promise<string> => {
     const gemini = getAI();
 
     const response = await gemini.models.generateContent({
@@ -80,7 +78,6 @@ export const editImage = async (prompt: string, baseImage: Image, seed?: number)
         },
         config: {
             responseModalities: [Modality.IMAGE],
-            ...(seed && { seed }),
         },
     });
 
@@ -98,29 +95,27 @@ export const editImage = async (prompt: string, baseImage: Image, seed?: number)
     throw new Error("No image edited. The model did not return an image.");
 };
 
-export const enhanceImage = async (baseImage: Image, seed?: number): Promise<string> => {
+export const enhanceImage = async (baseImage: Image): Promise<string> => {
     const enhancePrompt = "Enhance the quality of this image. Increase sharpness, improve lighting, refine details, and add more realism without changing the content or composition. Make it look like a high-resolution photograph.";
-    return editImage(enhancePrompt, baseImage, seed);
+    return editImage(enhancePrompt, baseImage);
 };
 
 
-export const generateImage = async (prompt: string, aspectRatio: string, seed?: number): Promise<string> => {
+export const generateImage = async (prompt: string, aspectRatio: string, numberOfImages: number): Promise<string[]> => {
     const gemini = getAI();
     
     const response = await gemini.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt: prompt,
         config: {
-            numberOfImages: 1,
+            numberOfImages: numberOfImages,
             outputMimeType: 'image/png',
             aspectRatio: aspectRatio,
-            ...(seed && { seed }),
         },
     });
 
     if (response.generatedImages && response.generatedImages.length > 0) {
-        const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-        return `data:image/png;base64,${base64ImageBytes}`;
+        return response.generatedImages.map(img => `data:image/png;base64,${img.image.imageBytes}`);
     }
     
     throw new Error("No image generated with imagen-4.0");
