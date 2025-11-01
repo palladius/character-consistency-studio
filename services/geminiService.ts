@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Image } from '../types';
 
@@ -19,7 +20,7 @@ const getMimeType = (dataUrl: string): string => {
     return dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
 };
 
-export const generateWithCharacter = async (prompt: string, referenceImages: Image[]): Promise<string> => {
+export const generateWithCharacter = async (prompt: string, referenceImages: Image[], aspectRatio: string, seed?: number): Promise<string> => {
     const gemini = getAI();
     
     const imageParts = referenceImages.map(img => ({
@@ -29,16 +30,21 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
         },
     }));
 
+    const finalPrompt = aspectRatio === '1:1' 
+        ? prompt
+        : `${prompt}, in a ${aspectRatio.replace(':', ' by ')} aspect ratio`;
+
     const response = await gemini.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
             parts: [
                 ...imageParts,
-                { text: prompt },
+                { text: finalPrompt },
             ],
         },
         config: {
             responseModalities: [Modality.IMAGE],
+            ...(seed && { seed }),
         },
     });
 
@@ -56,7 +62,7 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
     throw new Error("No image generated. The model did not return an image.");
 };
 
-export const editImage = async (prompt: string, baseImage: Image): Promise<string> => {
+export const editImage = async (prompt: string, baseImage: Image, seed?: number): Promise<string> => {
     const gemini = getAI();
 
     const response = await gemini.models.generateContent({
@@ -74,6 +80,7 @@ export const editImage = async (prompt: string, baseImage: Image): Promise<strin
         },
         config: {
             responseModalities: [Modality.IMAGE],
+            ...(seed && { seed }),
         },
     });
 
@@ -91,13 +98,13 @@ export const editImage = async (prompt: string, baseImage: Image): Promise<strin
     throw new Error("No image edited. The model did not return an image.");
 };
 
-export const enhanceImage = async (baseImage: Image): Promise<string> => {
+export const enhanceImage = async (baseImage: Image, seed?: number): Promise<string> => {
     const enhancePrompt = "Enhance the quality of this image. Increase sharpness, improve lighting, refine details, and add more realism without changing the content or composition. Make it look like a high-resolution photograph.";
-    return editImage(enhancePrompt, baseImage);
+    return editImage(enhancePrompt, baseImage, seed);
 };
 
 
-export const generateImage = async (prompt: string): Promise<string> => {
+export const generateImage = async (prompt: string, aspectRatio: string, seed?: number): Promise<string> => {
     const gemini = getAI();
     
     const response = await gemini.models.generateImages({
@@ -106,7 +113,8 @@ export const generateImage = async (prompt: string): Promise<string> => {
         config: {
             numberOfImages: 1,
             outputMimeType: 'image/png',
-            aspectRatio: '1:1',
+            aspectRatio: aspectRatio,
+            ...(seed && { seed }),
         },
     });
 
@@ -114,8 +122,6 @@ export const generateImage = async (prompt: string): Promise<string> => {
         const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
         return `data:image/png;base64,${base64ImageBytes}`;
     }
-
-    // FIX: The `GenerateImagesResponse` type does not contain `promptFeedback`, so the check for it has been removed.
     
     throw new Error("No image generated with imagen-4.0");
 };

@@ -9,10 +9,12 @@ interface ImageGridProps {
   onAddImages?: (files: FileList) => void;
   onDeleteImage: (id: string) => void;
   onImageClick?: (image: Image) => void;
+  onDownloadImage?: (image: Image) => void;
   characterImageCount?: number;
+  headerAction?: React.ReactNode;
 }
 
-const ImageGrid: React.FC<ImageGridProps> = ({ title, images, onAddImages, onDeleteImage, onImageClick, characterImageCount = 0 }) => {
+const ImageGrid: React.FC<ImageGridProps> = ({ title, images, onAddImages, onDeleteImage, onImageClick, onDownloadImage, characterImageCount = 0, headerAction }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddClick = () => {
@@ -27,7 +29,10 @@ const ImageGrid: React.FC<ImageGridProps> = ({ title, images, onAddImages, onDel
 
   return (
     <div className="mb-8">
-      <h3 className="text-xl font-bold text-slate-200 mb-4">{title}</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold text-slate-200">{title}</h3>
+        <div>{headerAction}</div>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {images.map(image => (
           <div
@@ -58,6 +63,17 @@ const ImageGrid: React.FC<ImageGridProps> = ({ title, images, onAddImages, onDel
                 className="absolute top-2 right-2 p-1.5 bg-red-600/80 hover:bg-red-500 rounded-full text-white transition-colors">
                 <div className="w-4 h-4">{ICONS.trash}</div>
                </button>
+               {onDownloadImage && (
+                 <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDownloadImage(image);
+                  }}
+                  aria-label="Download image"
+                  className="absolute bottom-2 right-2 p-1.5 bg-slate-700/80 hover:bg-purple-500 rounded-full text-white transition-colors">
+                  <div className="w-4 h-4">{ICONS.download}</div>
+                 </button>
+               )}
             </div>
           </div>
         ))}

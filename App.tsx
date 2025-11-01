@@ -9,12 +9,18 @@ import { generateImage } from './services/geminiService';
 import { ICONS } from './constants';
 import Loader from './components/Loader';
 
+const aspectRatios = [
+    { value: '1:1', icon: ICONS.aspect1to1, label: 'Square (1:1)' },
+    { value: '4:3', icon: ICONS.aspect4to3, label: 'Landscape (4:3)' },
+    { value: '3:4', icon: ICONS.aspect3to4, label: 'Portrait (3:4)' },
+];
 
 const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+    const [aspectRatio, setAspectRatio] = useState('1:1');
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
@@ -22,7 +28,8 @@ const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
         setError(null);
         setGeneratedImage(null);
         try {
-            const imageUrl = await generateImage(prompt);
+            const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+            const imageUrl = await generateImage(prompt, aspectRatio, seed);
             setGeneratedImage(imageUrl);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate image');
@@ -38,7 +45,8 @@ const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
                     <h2 className="text-2xl font-bold flex items-center gap-2">{ICONS.image} Quick Generate</h2>
                     <button onClick={onClose} className="p-1 text-slate-400 hover:text-white transition-colors">{ICONS.close}</button>
                 </div>
-                <div className="flex gap-2 mb-4">
+                
+                <div className="flex flex-col sm:flex-row gap-2 mb-2">
                     <input
                         type="text"
                         value={prompt}
@@ -51,7 +59,27 @@ const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
                         {isLoading ? '...' : 'Generate'}
                     </button>
                 </div>
-                {error && <p className="text-red-400 mb-4">{error}</p>}
+                 <div className="flex items-center justify-center mb-4">
+                    <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg">
+                        {aspectRatios.map(({ value, icon, label }) => (
+                            <button
+                                key={value}
+                                title={label}
+                                onClick={() => setAspectRatio(value)}
+                                className={`p-1.5 rounded-md transition-colors ${
+                                aspectRatio === value
+                                    ? 'bg-purple-600 text-white'
+                                    : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                                }`}
+                            >
+                                <div className="w-5 h-5">{icon}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {error && <p className="text-red-400 mb-4 text-center">{error}</p>}
+
                 <div className="w-full aspect-square bg-slate-900 rounded-md flex items-center justify-center">
                     {isLoading && <Loader text="Generating with Imagen..." />}
                     {generatedImage && <img src={generatedImage} alt={prompt} className="max-w-full max-h-full object-contain rounded-md" />}
@@ -81,8 +109,8 @@ function App() {
   const characterForModal = modalImage ? characters.find(c => c.id === modalImage.characterId) : null;
   const allGeneratedImagesForChar = characterForModal ? characterForModal.generatedImages : [];
 
-  const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string) => {
-    addGeneratedImage(characterId, prompt, dataUrl, parentId);
+  const handleImageUpdate = (characterId: string, prompt: string, dataUrl: string, parentId?: string, seed?: number) => {
+    addGeneratedImage(characterId, prompt, dataUrl, parentId, seed);
   };
 
   return (
@@ -121,6 +149,7 @@ function App() {
           onImageUpdate={handleImageUpdate}
           allGeneratedImages={allGeneratedImagesForChar}
           onSelectImage={setModalImage}
+          characterReferenceImages={characterForModal?.referenceImages}
         />
       )}
 

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.6] - 2024-08-01
+
+### Added
+- Added a "Download" icon to generated image thumbnails for quick one-click saving.
+- Implemented a "Download All" feature to export all of a character's generated images as a single `.zip` file.
+
 ## [0.0.5] - 2024-07-31
 
 ### Added

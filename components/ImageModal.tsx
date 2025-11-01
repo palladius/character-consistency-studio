@@ -1,25 +1,28 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GeneratedImage } from '../types';
 import Loader from './Loader';
 import { ICONS } from '../constants';
-import { editImage, enhanceImage } from '../services/geminiService';
+import { editImage, enhanceImage, generateWithCharacter } from '../services/geminiService';
 
 interface ImageModalProps {
   image: GeneratedImage | null;
   characterName?: string;
   onClose: () => void;
-  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string) => void;
+  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string, seed?: number) => void;
   allGeneratedImages: GeneratedImage[];
   onSelectImage: (image: GeneratedImage) => void;
+  characterReferenceImages?: {id: string; dataUrl: string}[]; // Needed for regenerate
 }
 
-const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, onImageUpdate, allGeneratedImages, onSelectImage }) => {
+const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, onImageUpdate, allGeneratedImages, onSelectImage, characterReferenceImages }) => {
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('Copy');
+  const [seedCopyStatus, setSeedCopyStatus] = useState('Copy');
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
@@ -37,6 +40,50 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
         setDimensions(null);
     }
   }, [image?.dataUrl]);
+  
+  // Reset transient state when the image changes
+  useEffect(() => {
+    if (image) {
+      setEditPrompt('');
+      setError(null);
+      setCopyStatus('Copy');
+      setSeedCopyStatus('Copy');
+      setIsEditing(false);
+      setIsEnhancing(false);
+      setIsRegenerating(false);
+    }
+  }, [image]);
+
+  const currentIndex = image ? allGeneratedImages.findIndex(i => i.id === image.id) : -1;
+
+  const handleNext = useCallback(() => {
+    if (allGeneratedImages.length > 1 && currentIndex !== -1) {
+      const nextIndex = (currentIndex + 1) % allGeneratedImages.length;
+      onSelectImage(allGeneratedImages[nextIndex]);
+    }
+  }, [currentIndex, allGeneratedImages, onSelectImage]);
+
+  const handlePrevious = useCallback(() => {
+    if (allGeneratedImages.length > 1 && currentIndex !== -1) {
+      const prevIndex = (currentIndex - 1 + allGeneratedImages.length) % allGeneratedImages.length;
+      onSelectImage(allGeneratedImages[prevIndex]);
+    }
+  }, [currentIndex, allGeneratedImages, onSelectImage]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+            e.preventDefault();
+            handleNext();
+        } else if (e.key === 'ArrowLeft') {
+            handlePrevious();
+        } else if (e.key === 'Escape') {
+            onClose();
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNext, handlePrevious, onClose]);
 
   if (!image) return null;
 
@@ -45,10 +92,19 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsEditing(true);
     setError(null);
     try {
-      const editedImageUrl = await editImage(editPrompt, image);
-      onImageUpdate(image.characterId, `Edit: ${editPrompt} (from original: ${image.prompt})`, editedImageUrl, image.id);
+      const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+      const editedImageUrl = await editImage(editPrompt, image, seed);
+      const newImage = {
+        id: `gen_${Date.now()}`,
+        dataUrl: editedImageUrl,
+        prompt: `Edit: ${editPrompt} (from original: ${image.prompt})`,
+        characterId: image.characterId,
+        parentId: image.id,
+        seed,
+      };
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, newImage.seed);
       setEditPrompt('');
-      onClose();
+      onSelectImage(newImage);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to edit image');
     } finally {
@@ -60,13 +116,56 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsEnhancing(true);
     setError(null);
     try {
-        const enhancedImageUrl = await enhanceImage(image);
-        onImageUpdate(image.characterId, `Enhanced: ${image.prompt}`, enhancedImageUrl, image.id);
-        onClose();
+        const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+        const enhancedImageUrl = await enhanceImage(image, seed);
+        const newImage = {
+            id: `gen_${Date.now()}`,
+            dataUrl: enhancedImageUrl,
+            prompt: `Enhanced: ${image.prompt}`,
+            characterId: image.characterId,
+            parentId: image.id,
+            seed,
+        };
+        onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, newImage.seed);
+        onSelectImage(newImage);
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to enhance image');
     } finally {
         setIsEnhancing(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!characterReferenceImages || characterReferenceImages.length === 0) {
+      setError("Reference images are not available for regeneration.");
+      return;
+    }
+    setIsRegenerating(true);
+    setError(null);
+    try {
+      // Determine aspect ratio from image dimensions if possible
+      const aspectRatio = dimensions ? `${dimensions.width}:${dimensions.height}` : '1:1';
+      // A simple approximation. This won't perfectly match the original aspect ratio buttons, but is better than nothing.
+      // A more robust solution would be to store the aspect ratio with the image.
+      const safeAspectRatio = ['1:1', '4:3', '3:4'].includes(aspectRatio.split(':').sort((a,b)=>+b-+a).join(':')) ? aspectRatio : '1:1';
+      
+      const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+      const regeneratedImageUrl = await generateWithCharacter(image.prompt, characterReferenceImages, safeAspectRatio, seed);
+      
+      const newImage = {
+          id: `gen_${Date.now()}`,
+          dataUrl: regeneratedImageUrl,
+          prompt: image.prompt, // Same prompt
+          characterId: image.characterId,
+          parentId: image.parentId, // Keep the same parent if it exists
+          seed,
+      };
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.parentId, newImage.seed);
+      onSelectImage(newImage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to regenerate image');
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -96,47 +195,75 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
       setTimeout(() => setCopyStatus('Copy'), 2000);
     }
   };
+
+  const handleCopySeed = () => {
+    if (seedCopyStatus !== 'Copy' || !navigator.clipboard || !image.seed) return;
+    navigator.clipboard.writeText(image.seed.toString()).then(() => {
+        setSeedCopyStatus('Copied!');
+        setTimeout(() => setSeedCopyStatus('Copy'), 2000);
+    }, () => {
+        setSeedCopyStatus('Error!');
+        setTimeout(() => setSeedCopyStatus('Copy'), 2000);
+    });
+  };
   
   const parentImage = image.parentId ? allGeneratedImages.find(i => i.id === image.parentId) : null;
   const childImages = allGeneratedImages.filter(i => i.parentId === image.id);
 
   return (
-    <div className="fixed inset-0 bg-slate-900 z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-slate-900 z-50 animate-[fade-in_0.3s_ease-out]" onClick={onClose}>
       <div className="bg-slate-800 w-full h-full flex flex-col md:flex-row" onClick={e => e.stopPropagation()}>
-        {/* Image display */}
-        <div className="w-full md:w-2/3 p-4 flex items-center justify-center bg-slate-900">
-           <div className="bg-white p-2 rounded-sm shadow-lg w-full h-full flex items-center justify-center">
-             <img src={image.dataUrl} alt={image.prompt} className="max-w-full max-h-full object-contain rounded-sm" />
+        <div className="relative w-full md:w-2/3 p-4 flex items-center justify-center bg-slate-900 overflow-hidden">
+           <div className="w-full h-full flex items-center justify-center">
+             <img src={image.dataUrl} alt={image.prompt} className="max-w-full max-h-full object-contain rounded-sm shadow-2xl" />
            </div>
+
+           {allGeneratedImages.length > 1 && (
+            <>
+              <button onClick={handlePrevious} aria-label="Previous image" className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 bg-black/30 hover:bg-black/60 rounded-full text-white transition-all duration-300 z-20"><div className="w-6 h-6">{ICONS.leftArrow}</div></button>
+              <button onClick={handleNext} aria-label="Next image" className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 bg-black/30 hover:bg-black/60 rounded-full text-white transition-all duration-300 z-20"><div className="w-6 h-6">{ICONS.rightArrow}</div></button>
+            </>
+           )}
+
+            {allGeneratedImages.length > 1 && (
+                <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center overflow-hidden z-10">
+                    <div className="flex items-center gap-4 transition-transform duration-300 ease-out" style={{ transform: `translateX(calc(50% - ${currentIndex * (96 + 16)}px - 48px))` }}>
+                        {allGeneratedImages.map((thumb, index) => {
+                            const distance = Math.abs(index - currentIndex);
+                            const scale = Math.max(1 - distance * 0.15, 0.4);
+                            const opacity = Math.max(1 - distance * 0.3, 0.2);
+
+                            return (
+                                <img key={thumb.id} src={thumb.dataUrl} onClick={() => onSelectImage(thumb)} alt="thumbnail" className="w-24 h-24 object-cover rounded-md cursor-pointer transition-all duration-300 ease-out flex-shrink-0" style={{ transform: `scale(${scale})`, opacity: opacity, boxShadow: index === currentIndex ? '0 0 15px 5px rgba(168, 85, 247, 0.6)' : '0 10px 15px -3px rgb(0 0 0 / 0.4)', border: index === currentIndex ? '3px solid rgb(168 85 247)' : '3px solid transparent' }} />
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
 
-        {/* Details and Edit panel */}
         <div className="w-full md:w-1/3 p-6 flex flex-col bg-slate-800">
           <div className="flex justify-between items-center mb-4">
-              <button onClick={onClose} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors font-semibold">
-                <div className="w-5 h-5">{ICONS.back}</div>
-                <span>Back</span>
-              </button>
+              <button onClick={onClose} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors font-semibold"><div className="w-5 h-5">{ICONS.back}</div><span>Back</span></button>
             <button onClick={onClose} className="p-1 text-slate-400 hover:text-white transition-colors">{ICONS.close}</button>
           </div>
           <div className="flex-grow overflow-y-auto pr-2 space-y-6">
             
-            {/* Metadata section */}
             <div>
                 <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
                 {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-purple-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
                 <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p><p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p></div>
+                {image.seed && (<div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Seed</p><div className="flex items-center gap-2"><p className="flex-grow text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-mono">{image.seed}</p><button onClick={handleCopySeed} className="bg-slate-600 hover:bg-slate-500 text-white font-bold p-2 rounded-md transition-colors text-xs flex items-center gap-1"><div className="w-3 h-3">{ICONS.copy}</div>{seedCopyStatus}</button></div></div>)}
                 <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
             </div>
 
-            {/* Actions Section */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm"><div className="w-4 h-4">{ICONS.download}</div> Download</button>
                 <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div> {copyStatus}</button>
                 <button onClick={handleEnhance} disabled={isEnhancing} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isEnhancing ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.sparkles}</div>} {isEnhancing ? '...' : 'Enhance'}</button>
+                <button onClick={handleRegenerate} disabled={isRegenerating || !characterReferenceImages} title={!characterReferenceImages ? 'Reference images unavailable' : 'Generate a new image with the same prompt'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 rounded-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isRegenerating ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.regenerate}</div>} {isRegenerating ? '...' : 'Regen'}</button>
             </div>
             
-            {/* Related Images */}
             {(parentImage || childImages.length > 0) && (
                 <div className="border-t border-slate-700 pt-6">
                     <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2">{ICONS.history} Image History</h3>
@@ -153,15 +280,14 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                 </div>
             )}
 
-            {/* Edit section */}
             <div>
               <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2 border-t border-slate-700 pt-6">{ICONS.edit} Edit Image</h3>
               <p className="text-sm text-slate-400 mb-3">Describe the changes you want to make.</p>
               
-              {isEditing ? ( <div className="py-8"><Loader text="Applying edits..." /></div>) : (
+              {isEditing || isRegenerating ? ( <div className="py-8"><Loader text={isEditing ? "Applying edits..." : "Regenerating image..."} /></div>) : (
                 <>
                   <textarea value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., add a retro filter, make the background a forest..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"/>
-                  <button onClick={handleEdit} disabled={isEditing || isEnhancing} className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
+                  <button onClick={handleEdit} disabled={isEditing || isEnhancing || isRegenerating} className="w-full mt-4 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
                     {ICONS.sparkles} Apply Changes
                   </button>
                   {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
