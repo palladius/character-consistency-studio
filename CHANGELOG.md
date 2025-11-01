@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.7] - 2024-08-01
+
+### Changed
+- Moved the "Quick Generate" button to the bottom-right of the screen to avoid overlapping with workspace UI elements.
+- The "Quick Generate" modal now pre-fills the prompt with a random suggestion, making it truly "quick" to use.
+
 ## [0.0.6] - 2024-08-01
 
 ### Added

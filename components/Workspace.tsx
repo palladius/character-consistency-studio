@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import JSZip from 'jszip';
 import { Character, GeneratedImage } from '../types';
@@ -147,7 +146,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   );
 
   return (
-    <main className="flex-grow p-6 bg-slate-900 overflow-y-auto h-screen">
+    <main className="flex-grow p-6 bg-slate-900 overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-white">Editing: {character.name}</h2>
         <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-lg">

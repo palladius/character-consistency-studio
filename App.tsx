@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import Workspace from './components/Workspace';
@@ -6,8 +5,9 @@ import ImageModal from './components/ImageModal';
 import { useCharacterManager } from './hooks/useCharacterManager';
 import { GeneratedImage } from './types';
 import { generateImage } from './services/geminiService';
-import { ICONS } from './constants';
+import { ICONS, QUICK_GENERATE_PROMPTS } from './constants';
 import Loader from './components/Loader';
+import Footer from './components/Footer';
 
 const aspectRatios = [
     { value: '1:1', icon: ICONS.aspect1to1, label: 'Square (1:1)' },
@@ -16,7 +16,12 @@ const aspectRatios = [
 ];
 
 const StandaloneGenerator: React.FC<{onClose: () => void}> = ({onClose}) => {
-    const [prompt, setPrompt] = useState('');
+    const getRandomPrompt = () => {
+        const randomIndex = Math.floor(Math.random() * QUICK_GENERATE_PROMPTS.length);
+        return QUICK_GENERATE_PROMPTS[randomIndex];
+    };
+
+    const [prompt, setPrompt] = useState(getRandomPrompt());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -114,32 +119,36 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen font-sans">
-      <Sidebar 
-        characters={characters}
-        selectedCharacterId={selectedCharacterId}
-        onSelectCharacter={setSelectedCharacterId}
-        onAddCharacter={addCharacter}
-        onDeleteCharacter={deleteCharacter}
-      />
-      <div className="flex flex-col flex-grow">
-          <div className="absolute top-4 right-6 z-20">
-              <button 
-                  onClick={() => setShowStandaloneGenerator(true)}
-                  className="bg-slate-800/50 hover:bg-slate-700/70 backdrop-blur-sm text-slate-200 font-semibold py-2 px-4 rounded-lg border border-slate-700 transition-colors flex items-center gap-2"
-              >
-                  {ICONS.image} Quick Generate
-              </button>
-          </div>
-          <Workspace
-            character={selectedCharacter}
-            onAddReferenceImages={addReferenceImages}
-            onDeleteReferenceImage={deleteReferenceImage}
-            onAddGeneratedImage={addGeneratedImage}
-            onDeleteGeneratedImage={deleteGeneratedImage}
-            onImageClick={(image) => setModalImage(image)}
-          />
+    <div className="flex flex-col h-screen w-screen font-sans bg-slate-900">
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar 
+          characters={characters}
+          selectedCharacterId={selectedCharacterId}
+          onSelectCharacter={setSelectedCharacterId}
+          onAddCharacter={addCharacter}
+          onDeleteCharacter={deleteCharacter}
+        />
+        <div className="flex flex-col flex-grow relative">
+            <div className="absolute bottom-4 right-6 z-20">
+                <button 
+                    onClick={() => setShowStandaloneGenerator(true)}
+                    className="bg-slate-800/50 hover:bg-slate-700/70 backdrop-blur-sm text-slate-200 font-semibold py-2 px-4 rounded-lg border border-slate-700 transition-colors flex items-center gap-2"
+                >
+                    {ICONS.image} Quick Generate
+                </button>
+            </div>
+            <Workspace
+              character={selectedCharacter}
+              onAddReferenceImages={addReferenceImages}
+              onDeleteReferenceImage={deleteReferenceImage}
+              onAddGeneratedImage={addGeneratedImage}
+              onDeleteGeneratedImage={deleteGeneratedImage}
+              onImageClick={(image) => setModalImage(image)}
+            />
+        </div>
       </div>
+      
+      <Footer />
       
       {modalImage && (
         <ImageModal 

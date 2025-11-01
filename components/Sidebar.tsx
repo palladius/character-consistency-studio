@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Character } from '../types';
 import { ICONS } from '../constants';
 
@@ -14,14 +13,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSelectCharacter, onAddCharacter, onDeleteCharacter }) => {
   const [newCharName, setNewCharName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [appVersion, setAppVersion] = useState('');
-
-  useEffect(() => {
-    fetch('./metadata.json')
-      .then(response => response.json())
-      .then(data => setAppVersion(data.version))
-      .catch(error => console.error('Error fetching app metadata:', error));
-  }, []);
 
   const handleAddCharacter = () => {
     if (newCharName.trim()) {
@@ -41,7 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
   };
 
   return (
-    <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4 h-screen overflow-y-auto">
+    <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4 overflow-y-auto">
       <div className="flex items-center gap-3 mb-6">
         {ICONS.sparkles}
         <h1 className="text-2xl font-bold text-white">Character Studio</h1>
@@ -102,10 +93,6 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
           ))}
         </ul>
       </nav>
-
-      <div className="mt-auto pt-4 border-t border-slate-800">
-        <p className="text-xs text-slate-500 text-center">{appVersion ? `Version ${appVersion}` : ''}</p>
-      </div>
     </aside>
   );
 };

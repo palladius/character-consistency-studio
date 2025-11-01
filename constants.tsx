@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const MIN_IMAGES = 3;
@@ -13,6 +12,17 @@ export const SUGGESTION_PROMPTS = [
   "on a cyberpunk motorcycle",
   "as a wizard casting a spell",
   "wearing elegant royal attire",
+];
+
+export const QUICK_GENERATE_PROMPTS = [
+  "A photorealistic image of a cat astronaut on Mars, detailed suit, cosmic background.",
+  "A majestic white wolf howling at a full moon in a snowy forest, digital painting, epic lighting.",
+  "A vibrant cyberpunk city street at night, with neon signs reflecting on wet pavement, flying cars.",
+  "An oil painting of a tranquil Japanese garden with a koi pond and cherry blossoms in full bloom.",
+  "A cute, fluffy Corgi wearing a tiny red superhero cape, studio portrait, dynamic pose.",
+  "Epic fantasy landscape with floating islands, ancient ruins, and giant waterfalls, matte painting.",
+  "A steampunk inventor's workshop, filled with gears, gadgets, and blueprints, warm lighting.",
+  "A minimalist black and white photo of a lone tree in a foggy field.",
 ];
 
 export const ICONS = {
