@@ -18,6 +18,15 @@ const Footer: React.FC = () => {
                 </span>
             )}
             {appVersion && <span className="text-slate-700">|</span>}
+             <a 
+                href="/test.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-yellow-400 transition-colors font-medium"
+            >
+                Run Tests
+            </a>
+            <span className="text-slate-700">|</span>
             <a 
                 href="https://github.com/palladius/character-consistency-studio" 
                 target="_blank" 

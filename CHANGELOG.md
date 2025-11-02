@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.18] - 2024-08-01
+
+### Added
+- Implemented a browser-based unit testing framework.
+- Added initial tests for `metadata.json` to ensure version and name integrity.
+- Added a "Run Tests" link to the application footer.
+
+## [0.0.17] - 2024-08-01
+
+### Fixed
+- Improved prompt for character image generation to more reliably produce images with the selected aspect ratio (square, landscape, portrait). Fixes a bug where all images were generated in portrait mode.
+
 ## [0.0.16] - 2024-08-01
 
 ### Fixed

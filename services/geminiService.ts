@@ -29,9 +29,14 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
         },
     }));
 
-    const finalPrompt = aspectRatio === '1:1' 
-        ? prompt
-        : `${prompt}, in a ${aspectRatio.replace(':', ' by ')} aspect ratio`;
+    let aspectRatioInstruction = 'square image';
+    if (aspectRatio === '4:3') {
+        aspectRatioInstruction = 'wide landscape image';
+    } else if (aspectRatio === '3:4') {
+        aspectRatioInstruction = 'tall portrait image';
+    }
+
+    const finalPrompt = `${prompt}, ${aspectRatioInstruction}`;
 
     const response = await gemini.models.generateContent({
         model: 'gemini-2.5-flash-image',
