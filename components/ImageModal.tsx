@@ -8,7 +8,7 @@ interface ImageModalProps {
   image: GeneratedImage | null;
   characterName?: string;
   onClose: () => void;
-  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any) => void;
+  onImageUpdate: (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any, requestedAspectRatio?: string) => void;
   onDeleteImage: (characterId: string, imageId: string) => void;
   allGeneratedImages: GeneratedImage[];
   onSelectImage: (image: GeneratedImage) => void;
@@ -68,6 +68,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     }
   }, [currentIndex, allGeneratedImages, onSelectImage]);
 
+  const handleDelete = useCallback(() => {
+    if (image) {
+      onDeleteImage(image.characterId, image.id);
+    }
+  }, [image, onDeleteImage]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -80,11 +86,14 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             handlePrevious();
         } else if (e.key === 'Escape') {
             onClose();
+        } else if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            handleDelete();
         }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrevious, onClose]);
+  }, [handleNext, handlePrevious, onClose, handleDelete]);
 
   if (!image) return null;
 
@@ -100,8 +109,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
         prompt: `Edit: ${editPrompt} (from original: ${image.prompt})`,
         characterId: image.characterId,
         parentId: image.id,
+        requestedAspectRatio: image.requestedAspectRatio,
       };
-      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, usageMetadata);
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, usageMetadata, newImage.requestedAspectRatio);
       setEditPrompt('');
       onSelectImage(newImage);
     } catch (err) {
@@ -122,8 +132,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             prompt: `Enhanced: ${image.prompt}`,
             characterId: image.characterId,
             parentId: image.id,
+            requestedAspectRatio: image.requestedAspectRatio,
         };
-        onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, usageMetadata);
+        onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.id, usageMetadata, newImage.requestedAspectRatio);
         onSelectImage(newImage);
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to enhance image');
@@ -140,10 +151,10 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     setIsRegenerating(true);
     setError(null);
     try {
-      const aspectRatio = dimensions ? `${dimensions.width}:${dimensions.height}` : '1:1';
-      const safeAspectRatio = ['1:1', '4:3', '3:4'].includes(aspectRatio.split(':').sort((a,b)=>+b-+a).join(':')) ? aspectRatio : '1:1';
+      const aspectRatioToUse = image.requestedAspectRatio || (dimensions ? `${dimensions.width}:${dimensions.height}` : '1:1');
+      const safeAspectRatio = ['1:1', '4:3', '3:4'].includes(aspectRatioToUse.split(':').sort((a,b)=>+b-+a).join(':')) ? aspectRatioToUse : '1:1';
       
-      const { dataUrl: regeneratedImageUrl, usageMetadata } = await generateWithCharacter(image.prompt, characterReferenceImages, safeAspectRatio);
+      const { dataUrl: regeneratedImageUrl, usageMetadata, requestedAspectRatio } = await generateWithCharacter(image.prompt, characterReferenceImages, safeAspectRatio);
       
       const newImage = {
           id: `gen_${Date.now()}`,
@@ -151,8 +162,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
           prompt: image.prompt, // Same prompt
           characterId: image.characterId,
           parentId: image.parentId, // Keep the same parent if it exists
+          requestedAspectRatio: requestedAspectRatio,
       };
-      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.parentId, usageMetadata);
+      onImageUpdate(newImage.characterId, newImage.prompt, newImage.dataUrl, newImage.parentId, usageMetadata, newImage.requestedAspectRatio);
       onSelectImage(newImage);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to regenerate image');
@@ -169,12 +181,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to permanently delete this image?')) {
-        onDeleteImage(image.characterId, image.id);
-    }
   };
 
   const handleCopy = async () => {
@@ -239,7 +245,18 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             <div>
                 <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
                 {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-yellow-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
-                <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p><p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p></div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p>
+                        <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p>
+                    </div>
+                    {image.requestedAspectRatio && (
+                        <div>
+                            <p className="text-sm text-slate-400 mb-1 font-semibold">Requested Ratio</p>
+                            <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{image.requestedAspectRatio}</p>
+                        </div>
+                    )}
+                </div>
                 <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
             </div>
 

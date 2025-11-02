@@ -11,7 +11,7 @@ interface WorkspaceProps {
   character: Character | null;
   onAddReferenceImages: (characterId: string, files: FileList) => void;
   onDeleteReferenceImage: (characterId: string, imageId: string) => void;
-  onAddGeneratedImage: (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any) => void;
+  onAddGeneratedImage: (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any, requestedAspectRatio?: string) => void;
   onDeleteGeneratedImage: (characterId: string, imageId: string) => void;
   onImageClick: (image: GeneratedImage) => void;
 }
@@ -68,7 +68,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       let successCount = 0;
       results.forEach(result => {
         if (result.status === 'fulfilled') {
-          onAddGeneratedImage(character.id, currentPrompt, result.value.dataUrl, undefined, result.value.usageMetadata);
+          onAddGeneratedImage(character.id, currentPrompt, result.value.dataUrl, undefined, result.value.usageMetadata, result.value.requestedAspectRatio);
           successCount++;
         } else {
           console.error("A generation failed:", result.reason);

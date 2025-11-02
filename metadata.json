@@ -1,6 +1,6 @@
 {
-  "version": "0.0.16",
+  "version": "0.1.2",
   "requestFramePermissions": [],
-  "name": "",
-  "description": ""
+  "name": "[VC] Character Consistency Studio v1 (frontend only)",
+  "description": "Character Studio app"
 }

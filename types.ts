@@ -7,6 +7,7 @@ export interface GeneratedImage extends Image {
   prompt: string;
   characterId: string;
   parentId?: string;
+  requestedAspectRatio?: string;
   usageMetadata?: {
     promptTokenCount: number;
     candidatesTokenCount: number;

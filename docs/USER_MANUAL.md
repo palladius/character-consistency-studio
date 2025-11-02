@@ -1,6 +1,8 @@
 # Character Consistency Studio - User Manual
 
-Welcome to the Character Consistency Studio! This guide will walk you through all the features of the application to help you get the most out of your creative process.
+Welcome to the Character Consistency Studio, vibe-coded by Riccardo using AI Studio "build" feature! 
+
+This guide will walk you through all the features of the application to help you get the most out of your creative process.
 
 ## Core Concepts
 

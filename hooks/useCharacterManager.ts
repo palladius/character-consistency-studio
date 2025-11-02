@@ -61,7 +61,7 @@ export const useCharacterManager = () => {
     ));
   }, []);
 
-  const addGeneratedImage = useCallback((characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any) => {
+  const addGeneratedImage = useCallback((characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any, requestedAspectRatio?: string) => {
     const newImage: GeneratedImage = {
       id: `gen_${Date.now()}_${Math.random()}`,
       dataUrl,
@@ -69,6 +69,7 @@ export const useCharacterManager = () => {
       characterId,
       parentId,
       usageMetadata,
+      requestedAspectRatio,
     };
     setCharacters(prev => prev.map(c => 
       c.id === characterId ? { ...c, generatedImages: [newImage, ...c.generatedImages] } : c

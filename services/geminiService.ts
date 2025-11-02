@@ -19,7 +19,7 @@ const getMimeType = (dataUrl: string): string => {
     return dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
 };
 
-export const generateWithCharacter = async (prompt: string, referenceImages: Image[], aspectRatio: string): Promise<{ dataUrl: string; usageMetadata?: any }> => {
+export const generateWithCharacter = async (prompt: string, referenceImages: Image[], aspectRatio: string): Promise<{ dataUrl: string; usageMetadata?: any; requestedAspectRatio: string; }> => {
     const gemini = getAI();
     
     const imageParts = referenceImages.map(img => ({
@@ -29,9 +29,19 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
         },
     }));
 
-    const finalPrompt = aspectRatio === '1:1' 
-        ? prompt
-        : `${prompt}, in a ${aspectRatio.replace(':', ' by ')} aspect ratio`;
+    let finalPrompt: string;
+    switch (aspectRatio) {
+        case '4:3':
+            finalPrompt = `A wide landscape photograph of ${prompt}. Aspect ratio 4:3.`;
+            break;
+        case '3:4':
+            finalPrompt = `A tall portrait photograph of ${prompt}. Aspect ratio 3:4.`;
+            break;
+        case '1:1':
+        default:
+            finalPrompt = `A square photograph of ${prompt}. Aspect ratio 1:1.`;
+            break;
+    }
 
     const response = await gemini.models.generateContent({
         model: 'gemini-2.5-flash-image',
@@ -51,7 +61,7 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
     if (imagePart?.inlineData) {
         const base64ImageBytes: string = imagePart.inlineData.data;
         const dataUrl = `data:${imagePart.inlineData.mimeType};base64,${base64ImageBytes}`;
-        return { dataUrl, usageMetadata: response.usageMetadata };
+        return { dataUrl, usageMetadata: response.usageMetadata, requestedAspectRatio: aspectRatio };
     }
 
     if (response.promptFeedback?.blockReason) {
@@ -103,7 +113,7 @@ export const enhanceImage = async (baseImage: Image): Promise<{ dataUrl: string;
 };
 
 
-export const generateImage = async (prompt: string, aspectRatio: string, numberOfImages: number): Promise<{ dataUrl: string; usageMetadata?: any }[]> => {
+export const generateImage = async (prompt: string, aspectRatio: string, numberOfImages: number): Promise<{ dataUrl: string; usageMetadata?: any; requestedAspectRatio: string; }[]> => {
     const gemini = getAI();
     
     const response = await gemini.models.generateImages({
@@ -120,6 +130,7 @@ export const generateImage = async (prompt: string, aspectRatio: string, numberO
         return response.generatedImages.map(img => ({
              dataUrl: `data:image/png;base64,${img.image.imageBytes}`,
              usageMetadata: undefined, // Imagen API doesn't provide token usage
+             requestedAspectRatio: aspectRatio,
         }));
     }
     
