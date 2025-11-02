@@ -29,14 +29,19 @@ export const generateWithCharacter = async (prompt: string, referenceImages: Ima
         },
     }));
 
-    let aspectRatioInstruction = 'square image';
-    if (aspectRatio === '4:3') {
-        aspectRatioInstruction = 'wide landscape image';
-    } else if (aspectRatio === '3:4') {
-        aspectRatioInstruction = 'tall portrait image';
+    let finalPrompt: string;
+    switch (aspectRatio) {
+        case '4:3':
+            finalPrompt = `A wide landscape photograph of ${prompt}. Aspect ratio 4:3.`;
+            break;
+        case '3:4':
+            finalPrompt = `A tall portrait photograph of ${prompt}. Aspect ratio 3:4.`;
+            break;
+        case '1:1':
+        default:
+            finalPrompt = `A square photograph of ${prompt}. Aspect ratio 1:1.`;
+            break;
     }
-
-    const finalPrompt = `${prompt}, ${aspectRatioInstruction}`;
 
     const response = await gemini.models.generateContent({
         model: 'gemini-2.5-flash-image',

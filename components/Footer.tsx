@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { View } from '../App';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+    onSetView: (view: View) => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ onSetView }) => {
     const [appVersion, setAppVersion] = useState('');
 
     useEffect(() => {
@@ -18,14 +23,12 @@ const Footer: React.FC = () => {
                 </span>
             )}
             {appVersion && <span className="text-slate-700">|</span>}
-             <a 
-                href="/test.html"
-                target="_blank"
-                rel="noopener noreferrer"
+             <button 
+                onClick={() => onSetView('tests')}
                 className="hover:text-yellow-400 transition-colors font-medium"
             >
                 Run Tests
-            </a>
+            </button>
             <span className="text-slate-700">|</span>
             <a 
                 href="https://github.com/palladius/character-consistency-studio" 
@@ -35,6 +38,10 @@ const Footer: React.FC = () => {
             >
                 GitHub Repository
             </a>
+            <span className="text-slate-700">|</span>
+            <span>
+                Developed with love with AI Studio build 💛
+            </span>
         </footer>
     );
 };

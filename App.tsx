@@ -9,6 +9,9 @@ import { ICONS, QUICK_GENERATE_PROMPTS } from './constants';
 import { TOKEN_COSTS } from './config';
 import Loader from './components/Loader';
 import Footer from './components/Footer';
+import AboutPage from './components/AboutPage';
+import DocsPage from './components/DocsPage';
+import TestPage from './components/TestPage';
 
 const aspectRatios = [
     { value: '1:1', icon: ICONS.aspect1to1, label: 'Square (1:1)' },
@@ -130,6 +133,8 @@ const StandaloneGenerator: React.FC<StandaloneGeneratorProps> = ({onClose, onIma
     );
 };
 
+export type View = 'workspace' | 'about' | 'docs' | 'tests';
+
 function App() {
   const {
     characters,
@@ -146,6 +151,7 @@ function App() {
 
   const [modalImage, setModalImage] = useState<GeneratedImage | null>(null);
   const [showStandaloneGenerator, setShowStandaloneGenerator] = useState(false);
+  const [view, setView] = useState<View>('workspace');
   
   const characterForModal = modalImage ? characters.find(c => c.id === modalImage.characterId) : null;
   const allGeneratedImagesForChar = characterForModal ? characterForModal.generatedImages : [];
@@ -205,41 +211,60 @@ function App() {
       setModalImage(remainingImages[nextIndexToShow]);
     }
   };
+  
+  const renderContent = () => {
+    switch (view) {
+      case 'about':
+        return <AboutPage onBack={() => setView('workspace')} />;
+      case 'docs':
+        return <DocsPage onBack={() => setView('workspace')} />;
+      case 'tests':
+        return <TestPage onBack={() => setView('workspace')} />;
+      case 'workspace':
+      default:
+        return (
+            <div className="flex flex-1 overflow-hidden">
+                <Sidebar 
+                  characters={characters}
+                  selectedCharacterId={selectedCharacterId}
+                  onSelectCharacter={setSelectedCharacterId}
+                  onAddCharacter={addCharacter}
+                  onDeleteCharacter={deleteCharacter}
+                  totalImages={usageStats.totalImages}
+                  totalTokens={usageStats.totalTokens}
+                  estimatedCost={usageStats.estimatedCost}
+                  onSetView={setView}
+                />
+                <div className="flex flex-col flex-grow relative">
+                    <div className="absolute bottom-4 right-6 z-20">
+                        <button 
+                            onClick={() => setShowStandaloneGenerator(true)}
+                            className="bg-slate-800/50 hover:bg-slate-700/70 backdrop-blur-sm text-slate-200 font-semibold py-2 px-4 rounded-lg border border-slate-700 transition-colors flex items-center gap-2"
+                        >
+                            {ICONS.image} Quick Generate
+                        </button>
+                    </div>
+                    <Workspace
+                      character={selectedCharacter}
+                      onAddReferenceImages={addReferenceImages}
+                      onDeleteReferenceImage={deleteReferenceImage}
+                      onAddGeneratedImage={addGeneratedImage}
+                      onDeleteGeneratedImage={deleteGeneratedImage}
+                      onImageClick={(image) => setModalImage(image)}
+                    />
+                </div>
+            </div>
+        );
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen w-screen font-sans bg-slate-900">
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
-          characters={characters}
-          selectedCharacterId={selectedCharacterId}
-          onSelectCharacter={setSelectedCharacterId}
-          onAddCharacter={addCharacter}
-          onDeleteCharacter={deleteCharacter}
-          totalImages={usageStats.totalImages}
-          totalTokens={usageStats.totalTokens}
-          estimatedCost={usageStats.estimatedCost}
-        />
-        <div className="flex flex-col flex-grow relative">
-            <div className="absolute bottom-4 right-6 z-20">
-                <button 
-                    onClick={() => setShowStandaloneGenerator(true)}
-                    className="bg-slate-800/50 hover:bg-slate-700/70 backdrop-blur-sm text-slate-200 font-semibold py-2 px-4 rounded-lg border border-slate-700 transition-colors flex items-center gap-2"
-                >
-                    {ICONS.image} Quick Generate
-                </button>
-            </div>
-            <Workspace
-              character={selectedCharacter}
-              onAddReferenceImages={addReferenceImages}
-              onDeleteReferenceImage={deleteReferenceImage}
-              onAddGeneratedImage={addGeneratedImage}
-              onDeleteGeneratedImage={deleteGeneratedImage}
-              onImageClick={(image) => setModalImage(image)}
-            />
-        </div>
+        {renderContent()}
       </div>
       
-      <Footer />
+      {view === 'workspace' && <Footer onSetView={setView} />}
       
       {modalImage && (
         <ImageModal 
