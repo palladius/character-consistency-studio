@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Character } from '../types';
 import { ICONS } from '../constants';
 import { QUICK_GEN_CHARACTER_ID } from '../hooks/useCharacterManager';
-import { View } from '../App';
 
 interface SidebarProps {
   characters: Character[];
@@ -13,10 +12,9 @@ interface SidebarProps {
   totalImages: number;
   totalTokens: number;
   estimatedCost: number;
-  onSetView: (view: View) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSelectCharacter, onAddCharacter, onDeleteCharacter, totalImages, totalTokens, estimatedCost, onSetView }) => {
+const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSelectCharacter, onAddCharacter, onDeleteCharacter, totalImages, totalTokens, estimatedCost }) => {
   const [newCharName, setNewCharName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [appVersion, setAppVersion] = useState('');
@@ -50,22 +48,12 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
 
   return (
     <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4">
-      <div className="flex items-center justify-between gap-3 mb-6 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          {ICONS.sparkles}
-          <h1 className="text-2xl font-bold text-white">
-            Character Studio
-            {appVersion && <span className="text-sm font-normal text-slate-400 ml-2">v{appVersion}</span>}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-            <button onClick={() => onSetView('about')} title="About this App" className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors">
-              <div className="w-5 h-5">{ICONS.info}</div>
-            </button>
-            <button onClick={() => onSetView('docs')} title="Documentation" className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors">
-              <div className="w-5 h-5">{ICONS.book}</div>
-            </button>
-        </div>
+      <div className="flex items-center gap-3 mb-6 flex-shrink-0">
+        {ICONS.sparkles}
+        <h1 className="text-2xl font-bold text-white">
+          Character Studio
+          {appVersion && <span className="text-sm font-normal text-slate-400 ml-2">v{appVersion}</span>}
+        </h1>
       </div>
       
       <nav className="flex-grow overflow-y-auto -mr-2 pr-2">
@@ -126,7 +114,9 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDeleteCharacter(char.id);
+                    if(window.confirm(`Are you sure you want to delete ${char.name}?`)) {
+                        onDeleteCharacter(char.id);
+                    }
                   }}
                   className="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                 >

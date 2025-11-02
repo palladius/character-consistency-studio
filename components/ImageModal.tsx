@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GeneratedImage } from '../types';
 import Loader from './Loader';
@@ -69,12 +68,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     }
   }, [currentIndex, allGeneratedImages, onSelectImage]);
 
-  const handleDelete = useCallback(() => {
-    if (image) {
-      onDeleteImage(image.characterId, image.id);
-    }
-  }, [image, onDeleteImage]);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -87,14 +80,11 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
             handlePrevious();
         } else if (e.key === 'Escape') {
             onClose();
-        } else if (e.key === 'Delete' || e.key === 'Backspace') {
-            e.preventDefault();
-            handleDelete();
         }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrevious, onClose, handleDelete]);
+  }, [handleNext, handlePrevious, onClose]);
 
   if (!image) return null;
 
@@ -179,6 +169,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to permanently delete this image?')) {
+        onDeleteImage(image.characterId, image.id);
+    }
   };
 
   const handleCopy = async () => {

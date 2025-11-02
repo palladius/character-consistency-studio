@@ -1,5 +1,5 @@
 {
-  "name": "[vc]-character-consistency-studio-v1-(frontend-only)",
+  "name": "",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,8 +12,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "@google/genai": "^1.28.0",
-    "jszip": "3.10.1",
-    "showdown": "^2.1.0"
+    "jszip": "3.10.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
