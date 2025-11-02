@@ -223,19 +223,32 @@ function App() {
       case 'workspace':
       default:
         return (
-            <div className="flex flex-1 overflow-hidden">
-                <Sidebar 
-                  characters={characters}
-                  selectedCharacterId={selectedCharacterId}
-                  onSelectCharacter={setSelectedCharacterId}
-                  onAddCharacter={addCharacter}
-                  onDeleteCharacter={deleteCharacter}
-                  totalImages={usageStats.totalImages}
-                  totalTokens={usageStats.totalTokens}
-                  estimatedCost={usageStats.estimatedCost}
-                  onSetView={setView}
-                />
-                <div className="flex flex-col flex-grow relative">
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Sidebar Container */}
+                <div className={`
+                    w-full h-full absolute transition-transform duration-300 ease-in-out
+                    md:relative md:w-96 md:flex-shrink-0 md:translate-x-0
+                    ${selectedCharacterId ? '-translate-x-full' : 'translate-x-0'}
+                `}>
+                    <Sidebar 
+                      characters={characters}
+                      selectedCharacterId={selectedCharacterId}
+                      onSelectCharacter={setSelectedCharacterId}
+                      onAddCharacter={addCharacter}
+                      onDeleteCharacter={deleteCharacter}
+                      totalImages={usageStats.totalImages}
+                      totalTokens={usageStats.totalTokens}
+                      estimatedCost={usageStats.estimatedCost}
+                      onSetView={setView}
+                    />
+                </div>
+                {/* Workspace Container */}
+                <div className={`
+                    w-full h-full absolute transition-transform duration-300 ease-in-out
+                    md:relative md:translate-x-0
+                    flex flex-col flex-grow
+                    ${selectedCharacterId ? 'translate-x-0' : 'translate-x-full'}
+                `}>
                     <div className="absolute bottom-4 right-6 z-20">
                         <button 
                             onClick={() => setShowStandaloneGenerator(true)}
@@ -251,6 +264,7 @@ function App() {
                       onAddGeneratedImage={addGeneratedImage}
                       onDeleteGeneratedImage={deleteGeneratedImage}
                       onImageClick={(image) => setModalImage(image)}
+                      onBack={() => setSelectedCharacterId(null)}
                     />
                 </div>
             </div>

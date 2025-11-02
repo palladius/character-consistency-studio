@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2024-08-01
+
+### Fixed
+- Corrected the layout of the Image Viewer on desktop screens. The details panel is now correctly positioned on the left, preventing it from overlapping the image.
+
+### Changed
+- Updated the User Manual to include documentation for all available keyboard shortcuts in the image viewer.
+
+## [0.1.4] - 2024-08-01
+
+### Added
+- Added keyboard shortcuts to the image viewer. Pressing 'i' or the down arrow key now toggles the details panel.
+
+## [0.1.3] - 2024-08-01
+
+### Fixed
+- Fixed a bug where the Docs and Test pages would fail to load due to a 404 error in deployed environments. The content for these pages is now bundled directly into the application, removing the failing network requests.
+
 ## [0.1.2] - 2024-08-01
 
 ### Added

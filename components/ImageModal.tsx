@@ -23,6 +23,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('Copy');
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [detailsVisible, setDetailsVisible] = useState(false);
 
   useEffect(() => {
     if (image?.dataUrl) {
@@ -49,6 +50,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
       setIsEditing(false);
       setIsEnhancing(false);
       setIsRegenerating(false);
+      setDetailsVisible(false); // Hide details on image change for mobile
     }
   }, [image]);
 
@@ -89,6 +91,9 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
         } else if (e.key === 'Delete' || e.key === 'Backspace') {
             e.preventDefault();
             handleDelete();
+        } else if (e.key.toLowerCase() === 'i' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            setDetailsVisible(prev => !prev);
         }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -205,9 +210,115 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
 
   return (
     <div className="fixed inset-0 bg-slate-900 z-50 animate-[fade-in_0.3s_ease-out]" onClick={onClose}>
-      <div className="bg-slate-800 w-full h-full flex flex-col md:flex-row" onClick={e => e.stopPropagation()}>
-        <div className="relative w-full md:w-2/3 p-4 flex items-center justify-center bg-slate-900 overflow-hidden">
-           <div className="w-full h-full flex items-center justify-center">
+      <div className="flex w-full h-full" onClick={e => e.stopPropagation()}>
+        
+        {/* Details Panel */}
+        <div className={`
+            absolute top-0 right-0 h-full w-full max-w-sm bg-slate-800 shadow-lg z-40 
+            transform transition-transform duration-300 ease-in-out
+            flex flex-col
+            ${detailsVisible ? 'translate-x-0' : 'translate-x-full'}
+            md:static md:w-[420px] md:flex-shrink-0 md:translate-x-0
+        `}>
+          <div className="p-6 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-4">
+                <button 
+                  onClick={() => {
+                    const isMobile = window.innerWidth < 768;
+                    if (isMobile) {
+                      setDetailsVisible(false);
+                    } else {
+                      onClose();
+                    }
+                  }} 
+                  className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors font-semibold">
+                  <div className="w-5 h-5">{ICONS.back}</div>
+                  <span>Back</span>
+                </button>
+              <button onClick={onClose} className="p-1 text-slate-400 hover:text-white transition-colors">{ICONS.close}</button>
+            </div>
+            <div className="flex-grow overflow-y-auto pr-2 space-y-6">
+              
+              <div>
+                  <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
+                  {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-yellow-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                          <p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p>
+                          <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p>
+                      </div>
+                      {image.requestedAspectRatio && (
+                          <div>
+                              <p className="text-sm text-slate-400 mb-1 font-semibold">Requested Ratio</p>
+                              <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{image.requestedAspectRatio}</p>
+                          </div>
+                      )}
+                  </div>
+                  <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm"><div className="w-4 h-4">{ICONS.download}</div><span>Download</span></button>
+                  <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div><span>{copyStatus}</span></button>
+                  <button onClick={handleEnhance} disabled={isEnhancing} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isEnhancing ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.sparkles}</div>}<span>{isEnhancing ? '...' : 'Enhance'}</span></button>
+                  <button onClick={handleRegenerate} disabled={isRegenerating || !characterReferenceImages} title={!characterReferenceImages ? 'Reference images unavailable' : 'Generate a new image with the same prompt'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isRegenerating ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.regenerate}</div>}<span>{isRegenerating ? '...' : 'Regen'}</span></button>
+                  <button onClick={handleDelete} className="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm"><div className="w-4 h-4">{ICONS.trash}</div><span>Delete</span></button>
+              </div>
+              
+              {(parentImage || childImages.length > 0) && (
+                  <div className="border-t border-slate-700 pt-6">
+                      <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2">{ICONS.history} Image History</h3>
+                      {parentImage && <div className="mb-3">
+                          <p className="text-sm text-slate-400 mb-2 font-semibold">Original Image</p>
+                          <img src={parentImage.dataUrl} onClick={() => onSelectImage(parentImage)} alt="Parent" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-yellow-400"/>
+                      </div>}
+                      {childImages.length > 0 && <div>
+                          <p className="text-sm text-slate-400 mb-2 font-semibold">Edits & Enhancements ({childImages.length})</p>
+                          <div className="flex flex-wrap gap-2">
+                          {childImages.map(child => <img key={child.id} src={child.dataUrl} onClick={() => onSelectImage(child)} alt="Child" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-yellow-400"/>)}
+                          </div>
+                      </div>}
+                  </div>
+              )}
+
+              <div>
+                <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2 border-t border-slate-700 pt-6">{ICONS.edit} Edit Image</h3>
+                <p className="text-sm text-slate-400 mb-3">Describe the changes you want to make.</p>
+                
+                {isEditing || isRegenerating ? ( <div className="py-8"><Loader text={isEditing ? "Applying edits..." : "Regenerating image..."} /></div>) : (
+                  <>
+                    <textarea value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., add a retro filter, make the background a forest..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-colors"/>
+                    <button onClick={handleEdit} disabled={isEditing || isEnhancing || isRegenerating} className="w-full mt-4 bg-yellow-500 hover:bg-yellow-600 disabled:bg-slate-600 text-slate-900 font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
+                      {ICONS.sparkles} Apply Changes
+                    </button>
+                    {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+                  </>
+                )}
+              </div>
+              
+              <div className="border-t border-slate-700 pt-4 mt-6">
+                  {image.usageMetadata ? (
+                      <div className="text-slate-500 bg-slate-900/50 p-2 rounded-md text-[11px] font-mono leading-tight">
+                          <div className="flex justify-between"><span>PROMPT_TOKENS:</span> <span>{image.usageMetadata.promptTokenCount}</span></div>
+                          <div className="flex justify-between"><span>OUTPUT_TOKENS:</span> <span>{image.usageMetadata.candidatesTokenCount}</span></div>
+                          <div className="flex justify-between font-bold text-slate-400 border-t border-slate-700 mt-1 pt-1"><span>TOTAL_TOKENS:</span> <span>{image.usageMetadata.totalTokenCount}</span></div>
+                      </div>
+                  ) : (
+                      <div className="text-slate-500 bg-slate-900/50 p-2 rounded-md text-xs text-center italic">
+                          Token usage data is not available for images generated with this model.
+                      </div>
+                  )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Backdrop for mobile details panel */}
+        {detailsVisible && <div className="md:hidden absolute inset-0 bg-black/60 z-30" onClick={() => setDetailsVisible(false)}></div>}
+
+        {/* Image Container */}
+        <div className="flex-grow h-full relative flex items-center justify-center bg-black overflow-hidden">
+           <div className="w-full h-full flex items-center justify-center p-4">
              <img src={image.dataUrl} alt={image.prompt} className="max-w-full max-h-full object-contain rounded-sm shadow-2xl" />
            </div>
 
@@ -233,87 +344,15 @@ const ImageModal: React.FC<ImageModalProps> = ({ image, characterName, onClose, 
                     </div>
                 </div>
             )}
-        </div>
-
-        <div className="w-full md:w-1/3 p-6 flex flex-col bg-slate-800">
-          <div className="flex justify-between items-center mb-4">
-              <button onClick={onClose} className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors font-semibold"><div className="w-5 h-5">{ICONS.back}</div><span>Back</span></button>
-            <button onClick={onClose} className="p-1 text-slate-400 hover:text-white transition-colors">{ICONS.close}</button>
-          </div>
-          <div className="flex-grow overflow-y-auto pr-2 space-y-6">
             
-            <div>
-                <h2 className="text-xl font-bold text-slate-100 mb-4">Image Details</h2>
-                {characterName && <div className="mb-4"><p className="text-sm text-slate-400 mb-1 font-semibold">Character</p><p className="text-yellow-300 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{characterName}</p></div>}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <p className="text-sm text-slate-400 mb-1 font-semibold">Dimensions</p>
-                        <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{dimensions ? `${dimensions.width} x ${dimensions.height}px` : 'Loading...'}</p>
-                    </div>
-                    {image.requestedAspectRatio && (
-                        <div>
-                            <p className="text-sm text-slate-400 mb-1 font-semibold">Requested Ratio</p>
-                            <p className="text-slate-200 bg-slate-700/50 p-2 rounded-md text-sm font-medium">{image.requestedAspectRatio}</p>
-                        </div>
-                    )}
-                </div>
-                <div><p className="text-sm text-slate-400 mb-1 font-semibold">Prompt</p><p className="text-slate-200 bg-slate-700/50 p-3 rounded-md text-sm">{image.prompt}</p></div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <button onClick={handleDownload} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm"><div className="w-4 h-4">{ICONS.download}</div><span>Download</span></button>
-                <button onClick={handleCopy} disabled={copyStatus !== 'Copy'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm disabled:opacity-60"><div className="w-4 h-4">{ICONS.copy}</div><span>{copyStatus}</span></button>
-                <button onClick={handleEnhance} disabled={isEnhancing} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isEnhancing ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.sparkles}</div>}<span>{isEnhancing ? '...' : 'Enhance'}</span></button>
-                <button onClick={handleRegenerate} disabled={isRegenerating || !characterReferenceImages} title={!characterReferenceImages ? 'Reference images unavailable' : 'Generate a new image with the same prompt'} className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed">{isRegenerating ? <div className="w-4 h-4 animate-spin rounded-full border-2 border-slate-400 border-t-white"></div> : <div className="w-4 h-4">{ICONS.regenerate}</div>}<span>{isRegenerating ? '...' : 'Regen'}</span></button>
-                <button onClick={handleDelete} className="bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-2 rounded-md transition-colors flex items-center justify-center gap-3 text-sm"><div className="w-4 h-4">{ICONS.trash}</div><span>Delete</span></button>
-            </div>
-            
-            {(parentImage || childImages.length > 0) && (
-                <div className="border-t border-slate-700 pt-6">
-                    <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2">{ICONS.history} Image History</h3>
-                    {parentImage && <div className="mb-3">
-                        <p className="text-sm text-slate-400 mb-2 font-semibold">Original Image</p>
-                        <img src={parentImage.dataUrl} onClick={() => onSelectImage(parentImage)} alt="Parent" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-yellow-400"/>
-                    </div>}
-                    {childImages.length > 0 && <div>
-                        <p className="text-sm text-slate-400 mb-2 font-semibold">Edits & Enhancements ({childImages.length})</p>
-                        <div className="flex flex-wrap gap-2">
-                        {childImages.map(child => <img key={child.id} src={child.dataUrl} onClick={() => onSelectImage(child)} alt="Child" className="w-20 h-20 object-cover rounded-md cursor-pointer hover:ring-2 ring-yellow-400"/>)}
-                        </div>
-                    </div>}
-                </div>
-            )}
-
-            <div>
-              <h3 className="text-lg font-semibold text-slate-100 mb-3 flex items-center gap-2 border-t border-slate-700 pt-6">{ICONS.edit} Edit Image</h3>
-              <p className="text-sm text-slate-400 mb-3">Describe the changes you want to make.</p>
-              
-              {isEditing || isRegenerating ? ( <div className="py-8"><Loader text={isEditing ? "Applying edits..." : "Regenerating image..."} /></div>) : (
-                <>
-                  <textarea value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} placeholder="e.g., add a retro filter, make the background a forest..." className="w-full h-24 p-2 bg-slate-700 border border-slate-600 rounded-md resize-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-colors"/>
-                  <button onClick={handleEdit} disabled={isEditing || isEnhancing || isRegenerating} className="w-full mt-4 bg-yellow-500 hover:bg-yellow-600 disabled:bg-slate-600 text-slate-900 font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2">
-                    {ICONS.sparkles} Apply Changes
-                  </button>
-                  {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
-                </>
-              )}
-            </div>
-            
-            <div className="border-t border-slate-700 pt-4 mt-6">
-                {image.usageMetadata ? (
-                    <div className="text-slate-500 bg-slate-900/50 p-2 rounded-md text-[11px] font-mono leading-tight">
-                        <div className="flex justify-between"><span>PROMPT_TOKENS:</span> <span>{image.usageMetadata.promptTokenCount}</span></div>
-                        <div className="flex justify-between"><span>OUTPUT_TOKENS:</span> <span>{image.usageMetadata.candidatesTokenCount}</span></div>
-                        <div className="flex justify-between font-bold text-slate-400 border-t border-slate-700 mt-1 pt-1"><span>TOTAL_TOKENS:</span> <span>{image.usageMetadata.totalTokenCount}</span></div>
-                    </div>
-                ) : (
-                    <div className="text-slate-500 bg-slate-900/50 p-2 rounded-md text-xs text-center italic">
-                        Token usage data is not available for images generated with this model.
-                    </div>
-                )}
-            </div>
-
-          </div>
+            {/* Mobile-only button to show details */}
+            <button
+                onClick={() => setDetailsVisible(true)}
+                aria-label="Show image details"
+                className="md:hidden absolute top-4 right-4 z-20 p-2 bg-slate-700/80 hover:bg-slate-600 rounded-full text-white transition-colors"
+            >
+                <div className="w-5 h-5">{ICONS.info}</div>
+            </button>
         </div>
       </div>
     </div>

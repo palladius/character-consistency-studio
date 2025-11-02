@@ -49,7 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
   const userCharacters = characters.filter(c => c.id !== QUICK_GEN_CHARACTER_ID);
 
   return (
-    <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4">
+    <aside className="w-full md:w-96 flex-shrink-0 bg-slate-900/70 backdrop-blur-sm border-r border-slate-800 flex flex-col p-4 h-full">
       <div className="flex items-center justify-between gap-3 mb-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           {ICONS.sparkles}
@@ -137,7 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ characters, selectedCharacterId, onSe
           ))}
         </ul>
       </nav>
-      <div className="flex-shrink-0 pt-4 mt-4 border-t border-slate-800">
+      <div className="flex-shrink-0 pt-4 mt-4 border-t border-slate-800 hidden md:block">
           <h3 className="text-sm font-semibold text-slate-400 mb-2">Session Stats</h3>
           <div className="text-xs text-slate-400 space-y-1">
               <div className="flex justify-between">

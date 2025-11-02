@@ -14,6 +14,7 @@ interface WorkspaceProps {
   onAddGeneratedImage: (characterId: string, prompt: string, dataUrl: string, parentId?: string, usageMetadata?: any, requestedAspectRatio?: string) => void;
   onDeleteGeneratedImage: (characterId: string, imageId: string) => void;
   onImageClick: (image: GeneratedImage) => void;
+  onBack: () => void;
 }
 
 const aspectRatios = [
@@ -30,7 +31,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
   onDeleteReferenceImage, 
   onAddGeneratedImage, 
   onDeleteGeneratedImage,
-  onImageClick 
+  onImageClick,
+  onBack,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -204,7 +206,12 @@ const Workspace: React.FC<WorkspaceProps> = ({
   return (
     <main className="flex-grow p-6 bg-slate-900 overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-white">{isQuickGenWorkspace ? character.name : `Editing: ${character.name}`}</h2>
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-2 -ml-2 text-slate-300 hover:text-white md:hidden">
+                <div className="w-6 h-6">{ICONS.back}</div>
+            </button>
+            <h2 className="text-3xl font-bold text-white">{isQuickGenWorkspace ? character.name : `Editing: ${character.name}`}</h2>
+        </div>
       </div>
       
       {!isQuickGenWorkspace && !isReadyToGenerate && (
